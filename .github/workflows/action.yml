@@ -35,6 +35,8 @@ jobs:
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt test:headerCheck"
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt compile"
             docker-compose -f docker-compose-workflow.yml up -d neo4j
+            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml up -d data-accessor-vald-web
             docker-compose -f docker-compose-workflow.yml up -d scala-data-accessor-neo4j-web
             docker-compose -f docker-compose-workflow.yml up -d toposoid-common-nlp-japanese-web
             docker-compose -f docker-compose-workflow.yml up -d toposoid-sentence-parser-japanese-web
