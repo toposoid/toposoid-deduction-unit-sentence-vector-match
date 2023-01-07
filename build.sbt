@@ -1,4 +1,4 @@
-name := """toposoid-deduction-unit-sentence-vector-match"""
+name := """toposoid-deduction-unit-sentence-vector-match-web"""
 organization := "com.linked.ideal"
 version := "0.4-SNAPSHOT"
 
