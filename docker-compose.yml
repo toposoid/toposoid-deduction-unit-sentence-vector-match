@@ -62,8 +62,11 @@ services:
       - 9010:9010
   vald:
     image: vdaas/vald-agent-ngt:v1.6.3
+    user: 1000:1000
     volumes:
       - ./vald-config:/etc/server
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
     networks:
       app_net:
         ipv4_address: 172.30.0.10
