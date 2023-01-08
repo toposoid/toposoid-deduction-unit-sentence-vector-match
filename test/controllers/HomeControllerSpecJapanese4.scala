@@ -55,17 +55,6 @@ class HomeControllerSpecJapanese4 extends PlaySpec with BeforeAndAfter with Befo
 
   override implicit def defaultAwaitTimeout: Timeout = 600.seconds
   val controller: HomeController = inject[HomeController]
-  /*
-  val sentenceA = "太郎はある調査を進めてきた。"
-  val sentenceB = "太郎は秀逸な発案をした。"
-  val sentenceC = "それは人事改善の措置だった。"
-  val sentenceD = "太郎は素晴らしい評価を得た。"
-
-  val paraphraseA = "太郎はある調査を進めてきた。"
-  val paraphraseB = "太郎は秀逸な発案をした。"
-  val paraphraseC = "それは人事改善の措置だった。"
-  val paraphraseD = "太郎は素晴らしい評価を得た。"
-  */
 
   val sentenceA = "自然界の法則がすべての慣性系で同じように成り立っている。"
   val sentenceB = "どの慣性系から見ても光の速さは一定である。"
@@ -76,18 +65,6 @@ class HomeControllerSpecJapanese4 extends PlaySpec with BeforeAndAfter with Befo
   val paraphraseB = "見ている慣性系によらず光速は不変である。"
   val paraphraseC = "物体の運動する速さは光の速さを超えない。"
   val paraphraseD = "特殊相対性理論において物体は運動することにより時間がゆっくり進む。"
-
-  /*
-  val sentenceA = "自然界の法則がすべての慣性系で同じように成り立っている。"
-  val sentenceB = "どの慣性系から見ても光の速さは一定である。"
-  val sentenceC = "運動する物体の速さの上限は光の速さである。"
-  val sentenceD = "特殊相対性理論では運動する物体の時間は進みかたが遅くなる。"
-
-  val paraphraseA = "自然界の法則はどの慣性系でも例外なく成り立っている。"
-  val paraphraseB = "慣性系によらず光速は不変である。"
-  val paraphraseC = "物体の運動する速さは光の速さを超えない。"
-  val paraphraseD = "特殊相対性理論において物体は運動することにより時間がゆっくり進む。"
-  */
 
   def registSingleClaim(knowledgeForParser: KnowledgeForParser): Unit = {
     val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
