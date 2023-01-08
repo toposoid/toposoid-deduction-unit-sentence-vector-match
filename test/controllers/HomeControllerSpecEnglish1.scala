@@ -40,13 +40,6 @@ import scala.concurrent.duration.DurationInt
 
 class HomeControllerSpecEnglish1 extends PlaySpec with BeforeAndAfter with BeforeAndAfterAll with GuiceOneAppPerSuite  with DefaultAwaitTimeout with Injecting {
 
-  /*
-  "The victim was lying face down." "bloody words were written on the floor."
-  "This must be a murder made to look like an accident.", "The culprit is among us."
-
-  "I heard that the victim was lying on his stomach.", "There was a dying message written in blood on the floor."
-  "This is suspected to be a murder disguised as an accident", "We confirmed that the culprit was one of us."
-   */
   before {
     Neo4JAccessor.delete()
     Thread.sleep(5000)
