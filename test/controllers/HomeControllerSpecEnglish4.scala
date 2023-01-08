@@ -56,15 +56,15 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
   override implicit def defaultAwaitTimeout: Timeout = 600.seconds
   val controller: HomeController = inject[HomeController]
 
-  val sentenceA = "太郎はある調査を進めてきた。"
-  val sentenceB = "太郎は秀逸な発案をした。"
-  val sentenceC = "それは人事改善の措置だった。"
-  val sentenceD = "太郎は素晴らしい評価を得た。"
+  val sentenceA = "The victim was lying face down."
+  val sentenceB = "Bloody words were written on the floor."
+  val sentenceC = "This must be a murder made to look like an accident."
+  val sentenceD = "The culprit is among us."
 
-  val paraphraseA = "太郎はある調査を進めてきた。"
-  val paraphraseB = "太郎は秀逸な発案をした。"
-  val paraphraseC = "それは人事改善の措置だった。"
-  val paraphraseD = "太郎は素晴らしい評価を得た。"
+  val paraphraseA = "I heard that the victim was lying on his stomach."
+  val paraphraseB = "There was a dying message written in blood on the floor."
+  val paraphraseC = "This is suspected to be a murder disguised as an accident."
+  val paraphraseD = "We confirmed that the culprit was one of us."
 
   def registSingleClaim(knowledgeForParser: KnowledgeForParser): Unit = {
     val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
@@ -421,9 +421,9 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       val sentenceId4 = UUID.random.toString
       val sentenceId5 = UUID.random.toString
       val knowledge1 = Knowledge(sentenceA,"en_US", "{}", false)
-      //val knowledge2 = Knowledge(sentenceB,"en_US", "{}", false)
-      //val knowledge3 = Knowledge(sentenceC,"en_US", "{}", false)
-      //val knowledge4 = Knowledge(sentenceD,"en_US", "{}", false)
+      val knowledge2 = Knowledge(sentenceB,"en_US", "{}", false)
+      val knowledge3 = Knowledge(sentenceC,"en_US", "{}", false)
+      val knowledge4 = Knowledge(sentenceD,"en_US", "{}", false)
 
       val paraphrase1 = Knowledge(paraphraseA,"en_US", "{}", false)
       val paraphrase2 = Knowledge(paraphraseB,"en_US", "{}", false)
@@ -433,9 +433,9 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       registSingleClaim(KnowledgeForParser(propositionId1, sentenceId1, knowledge1))
 
       val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
-        List(KnowledgeForParser(propositionId2, sentenceId2, paraphrase1), KnowledgeForParser(propositionId2, sentenceId3, paraphrase2)),
+        List(KnowledgeForParser(propositionId2, sentenceId2, knowledge1), KnowledgeForParser(propositionId2, sentenceId3, knowledge2)),
         List(PropositionRelation("AND", 0,1)),
-        List(KnowledgeForParser(propositionId2, sentenceId4, paraphrase3), KnowledgeForParser(propositionId2, sentenceId5, paraphrase4)),
+        List(KnowledgeForParser(propositionId2, sentenceId4, knowledge3), KnowledgeForParser(propositionId2, sentenceId5, knowledge4)),
         List(PropositionRelation("AND", 0,1)))
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)

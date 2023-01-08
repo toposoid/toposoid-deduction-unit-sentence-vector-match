@@ -367,14 +367,13 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     val maxFreqSize = targetPropositionIds.groupBy(identity).mapValues(_.size).maxBy(_._2)._2
     val propositionIdsHavingMaxFreq:List[String] = targetPropositionIds.groupBy(identity).mapValues(_.size).filter(_._2 == maxFreqSize).map(_._1).toList
     logger.debug(propositionIdsHavingMaxFreq.toString())
-    //If the number of search results with this positionId and the number of edges are equal,
-    //it is assumed that they match exactly. It is no longer a partial match.
-    val coveredPropositionIds =  propositionIdsHavingMaxFreq.filter(x => searchResults.filter(y =>  existALlPropositionIdEqualId(x, y)).size ==  aso.edgeList.size)
+    //It is assumed that it is sufficient if the object can be covered by nodes and edges.
+    val coveredPropositionIds =  propositionIdsHavingMaxFreq.filter(x => searchResults.filter(y =>  existALlPropositionIdEqualId(x, y)).size >=  aso.edgeList.size)
     if(coveredPropositionIds.size == 0) return aso
     val status = true
     //selectedPropositions includes trivialClaimsPropositionIds
     val additionalPropositionIds = aso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds
-    val deductionResult:DeductionResult = new DeductionResult(status, coveredPropositionIds:::additionalPropositionIds, "exact-match")
+    val deductionResult:DeductionResult = new DeductionResult(status, coveredPropositionIds:::additionalPropositionIds, "")
     val updateDeductionResultMap = aso.deductionResultMap.updated(aso.sentenceType.toString, deductionResult)
     AnalyzedSentenceObject(aso.nodeMap, aso.edgeList, aso.sentenceType, aso.sentenceId, aso.lang, updateDeductionResultMap)
 

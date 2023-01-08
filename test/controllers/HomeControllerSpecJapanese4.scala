@@ -55,7 +55,7 @@ class HomeControllerSpecJapanese4 extends PlaySpec with BeforeAndAfter with Befo
 
   override implicit def defaultAwaitTimeout: Timeout = 600.seconds
   val controller: HomeController = inject[HomeController]
-
+  /*
   val sentenceA = "太郎はある調査を進めてきた。"
   val sentenceB = "太郎は秀逸な発案をした。"
   val sentenceC = "それは人事改善の措置だった。"
@@ -65,6 +65,29 @@ class HomeControllerSpecJapanese4 extends PlaySpec with BeforeAndAfter with Befo
   val paraphraseB = "太郎は秀逸な発案をした。"
   val paraphraseC = "それは人事改善の措置だった。"
   val paraphraseD = "太郎は素晴らしい評価を得た。"
+  */
+
+  val sentenceA = "自然界の法則がすべての慣性系で同じように成り立っている。"
+  val sentenceB = "どの慣性系から見ても光の速さは一定である。"
+  val sentenceC = "運動する物体の速さの上限は光の速さである。"
+  val sentenceD = "特殊相対性理論では運動する物体の時間は進みかたが遅くなる。"
+
+  val paraphraseA = "自然界の物理法則は例外なくどの慣性系でも成立する。"
+  val paraphraseB = "見ている慣性系によらず光速は不変である。"
+  val paraphraseC = "物体の運動する速さは光の速さを超えない。"
+  val paraphraseD = "特殊相対性理論において物体は運動することにより時間がゆっくり進む。"
+
+  /*
+  val sentenceA = "自然界の法則がすべての慣性系で同じように成り立っている。"
+  val sentenceB = "どの慣性系から見ても光の速さは一定である。"
+  val sentenceC = "運動する物体の速さの上限は光の速さである。"
+  val sentenceD = "特殊相対性理論では運動する物体の時間は進みかたが遅くなる。"
+
+  val paraphraseA = "自然界の法則はどの慣性系でも例外なく成り立っている。"
+  val paraphraseB = "慣性系によらず光速は不変である。"
+  val paraphraseC = "物体の運動する速さは光の速さを超えない。"
+  val paraphraseD = "特殊相対性理論において物体は運動することにより時間がゆっくり進む。"
+  */
 
   def registSingleClaim(knowledgeForParser: KnowledgeForParser): Unit = {
     val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
@@ -421,9 +444,9 @@ class HomeControllerSpecJapanese4 extends PlaySpec with BeforeAndAfter with Befo
       val sentenceId4 = UUID.random.toString
       val sentenceId5 = UUID.random.toString
       val knowledge1 = Knowledge(sentenceA,"ja_JP", "{}", false)
-      //val knowledge2 = Knowledge(sentenceB,"ja_JP", "{}", false)
-      //val knowledge3 = Knowledge(sentenceC,"ja_JP", "{}", false)
-      //val knowledge4 = Knowledge(sentenceD,"ja_JP", "{}", false)
+      val knowledge2 = Knowledge(sentenceB,"ja_JP", "{}", false)
+      val knowledge3 = Knowledge(sentenceC,"ja_JP", "{}", false)
+      val knowledge4 = Knowledge(sentenceD,"ja_JP", "{}", false)
 
       val paraphrase1 = Knowledge(paraphraseA,"ja_JP", "{}", false)
       val paraphrase2 = Knowledge(paraphraseB,"ja_JP", "{}", false)
@@ -433,9 +456,9 @@ class HomeControllerSpecJapanese4 extends PlaySpec with BeforeAndAfter with Befo
       registSingleClaim(KnowledgeForParser(propositionId1, sentenceId1, knowledge1))
 
       val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
-        List(KnowledgeForParser(propositionId2, sentenceId2, paraphrase1), KnowledgeForParser(propositionId2, sentenceId3, paraphrase2)),
+        List(KnowledgeForParser(propositionId2, sentenceId2, knowledge1), KnowledgeForParser(propositionId2, sentenceId3, knowledge2)),
         List(PropositionRelation("AND", 0,1)),
-        List(KnowledgeForParser(propositionId2, sentenceId4, paraphrase3), KnowledgeForParser(propositionId2, sentenceId5, paraphrase4)),
+        List(KnowledgeForParser(propositionId2, sentenceId4, knowledge3), KnowledgeForParser(propositionId2, sentenceId5, knowledge4)),
         List(PropositionRelation("AND", 0,1)))
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
