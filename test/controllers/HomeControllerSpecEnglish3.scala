@@ -57,15 +57,15 @@ class HomeControllerSpecEnglish3 extends PlaySpec with BeforeAndAfter with Befor
 
   val controller: HomeController = inject[HomeController]
 
-  val sentenceA = "太郎はある調査を進めてきた。"
-  val sentenceB = "太郎は秀逸な発案をした。"
-  val sentenceC = "それは人事改善の措置だった。"
-  val sentenceD = "太郎は素晴らしい評価を得た。"
+  val sentenceA = "The victim was lying face down."
+  val sentenceB = "Bloody words were written on the floor."
+  val sentenceC = "This must be a murder made to look like an accident."
+  val sentenceD = "The culprit is among us."
 
-  val paraphraseA = "太郎はある調査を進めてきた。"
-  val paraphraseB = "太郎は秀逸な発案をした。"
-  val paraphraseC = "それは人事改善の措置だった。"
-  val paraphraseD = "太郎は素晴らしい評価を得た。"
+  val paraphraseA = "I heard that the victim was lying on his stomach."
+  val paraphraseB = "There was a dying message written in blood on the floor."
+  val paraphraseC = "This is suspected to be a murder disguised as an accident."
+  val paraphraseD = "We confirmed that the culprit was one of us."
 
   def registSingleClaim(knowledgeForParser: KnowledgeForParser): Unit = {
     val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(

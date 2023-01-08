@@ -55,13 +55,13 @@ class HomeControllerSpecJapanese2 extends PlaySpec with BeforeAndAfter with Befo
 
   override implicit def defaultAwaitTimeout: Timeout = 600.seconds
   val controller: HomeController = inject[HomeController]
-  val sentenceA = "太郎はある調査を進めてきた。"
-  val sentenceB = "太郎は秀逸な発案をした。"
-  val sentenceC = "それは人事改善の措置だった。"
+  val sentenceA = "自然界の法則がすべての慣性系で同じように成り立っている。"
+  val sentenceB = "どの慣性系から見ても光の速さは一定である。"
+  val sentenceC = "運動する物体の速さの上限は光の速さである。"
 
-  val paraphraseA = "太郎はある調査を進めてきた。"
-  val paraphraseB = "太郎は秀逸な発案をした。"
-  val paraphraseC = "それは人事改善の措置だった。"
+  val paraphraseA = "自然界の物理法則は例外なくどの慣性系でも成立する。"
+  val paraphraseB = "見ている慣性系によらず光速は不変である。"
+  val paraphraseC = "物体の運動する速さは光の速さを超えない。"
 
   def registSingleClaim(knowledgeForParser:KnowledgeForParser): Unit = {
     val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
