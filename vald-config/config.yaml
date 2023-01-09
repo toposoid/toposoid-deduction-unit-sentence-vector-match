@@ -46,7 +46,7 @@ ngt:
   # The limit duration of automatic indexing
   # auto_index_duration_limit should be 30m-6h for production use. Below setting is a just example
   #auto_index_duration_limit: 1m
-  auto_index_duration_limit: 3s
+  auto_index_duration_limit: 5s
   # Check duration of automatic indexing.
   # auto_index_check_duration be 10m-1h for production use. Below setting is a just example
   auto_index_check_duration: 5m
@@ -55,11 +55,11 @@ ngt:
   # The limit duration of auto saving indexing
   # auto_save_index_duration should be 30m-60m for production use. The below setting is a just example.
   #auto_save_index_duration: 90s
-  auto_save_index_duration: 3s
+  auto_save_index_duration: 5s
   # The maximum limit duration for an initial delay
   # initial_delay_max_duration should be 3m-5m for production use. The below setting is a just example.
   #initial_delay_max_duration: 60s
-  initial_delay_max_duration: 3s
+  initial_delay_max_duration: 5s
   # The default create index batch pool size.
   # When it is too large comparing to machine resource, the docker container will be crash.
   default_pool_size: 500
