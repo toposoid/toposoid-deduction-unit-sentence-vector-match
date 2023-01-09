@@ -80,6 +80,9 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
       val json:String = Json.toJson(SingleFeatureVectorForSearch(vector=vector.vector, num=conf.getString("TOPOSOID_VALD_SEARCH_NUM_MAX").toInt, radius=(-1.0f), epsilon=0.01f, timeout=50000000000L)).toString()
       val featureVectorSearchResultJson:String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "search")
       val result = Json.parse(featureVectorSearchResultJson).as[FeatureVectorSearchResult]
+      logger.info("-----------------------------------------------------------------")
+      logger.info(result.ids.toString())
+      logger.info("-----------------------------------------------------------------")
       result.ids.size match {
         case 0 => SentenceId2FeatureVectorSearchResult(originalSentenceId, List.empty[FeatureVectorSearchInfo])
         case _ => SentenceId2FeatureVectorSearchResult(originalSentenceId, result.ids.map(y => {
