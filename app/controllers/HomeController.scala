@@ -182,6 +182,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
         case _ =>  (validAsos, extractFeatureVectorSearchInfoList(validAsos, sentenceId2FeatureVectorSearchResult))
       }
     }else{
+      logger.info("check2----------------------------------------------------------------------------------------")
       (List.empty[AnalyzedSentenceObjects], List.empty[SentenceId2FeatureVectorSearchResult])
     }
   }
@@ -425,11 +426,12 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
   }
 
 
-  def neo4JData2AnalyzedSentenceObjectByPropositionId(propositionId:String, sentenceType:Int):AnalyzedSentenceObjects = Try{
+  private def neo4JData2AnalyzedSentenceObjectByPropositionId(propositionId:String, sentenceType:Int):AnalyzedSentenceObjects = Try{
     val nodeType:String = ToposoidUtils.getNodeType(sentenceType)
     val query = "MATCH (n1:%s)-[e]->(n2:%s) WHERE n1.propositionId='%s' AND n2.propositionId='%s' RETURN n1, e, n2".format(nodeType, nodeType, propositionId, propositionId)
     val jsonStr:String = getCypherQueryResult(query, "")
-    logger.info("-----------------------------------------------------------------------------------------------")
+    logger.info("check3-----------------------------------------------------------------------------------------------")
+    logger.info(query)
     logger.info(jsonStr)
     logger.info("-----------------------------------------------------------------------------------------------")
     //If there is even one that does not match, it is useless to search further
