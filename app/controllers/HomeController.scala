@@ -19,8 +19,8 @@ package controllers
 import com.ideal.linked.common.DeploymentConverter.conf
 import com.ideal.linked.toposoid.common.{CLAIM, PREMISE, ToposoidUtils}
 import com.ideal.linked.toposoid.deduction.common.AnalyzedSentenceObjectUtils.makeSentence
-import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{existALlPropositionIdEqualId, getCypherQueryResult, havePremiseNode}
-import com.ideal.linked.toposoid.deduction.common.{SentenceInfo}
+import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{existALlPropositionIdEqualId, getCypherQueryResult, havePremiseNode, neo4JData2AnalyzedSentenceObjectByPropositionId}
+import com.ideal.linked.toposoid.deduction.common.SentenceInfo
 import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorSearchResult, SingleFeatureVectorForSearch}
 import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.Knowledge
@@ -53,7 +53,6 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
       val remakeAnalyzedSentenceObjects:List[AnalyzedSentenceObjects] = remakeAnalyzedSentenceObjectsInfo._1
       val featureVectorSearchInfoList:List[SentenceId2FeatureVectorSearchResult] = remakeAnalyzedSentenceObjectsInfo._2
       if(remakeAnalyzedSentenceObjects.size == 0){
-        logger.info("check-----------------------------------------------------------------")
         Ok(Json.toJson(analyzedSentenceObjects)).as(JSON)
       }else{
         val deducedAnalyzedSentenceObjects:List[AnalyzedSentenceObjects] = remakeAnalyzedSentenceObjects.map( deduction(_))
@@ -80,9 +79,6 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
       val json:String = Json.toJson(SingleFeatureVectorForSearch(vector=vector.vector, num=conf.getString("TOPOSOID_VALD_SEARCH_NUM_MAX").toInt, radius=(-1.0f), epsilon=0.01f, timeout=50000000000L)).toString()
       val featureVectorSearchResultJson:String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "search")
       val result = Json.parse(featureVectorSearchResultJson).as[FeatureVectorSearchResult]
-      logger.info("-----------------------------------------------------------------")
-      logger.info(result.ids.toString())
-      logger.info("-----------------------------------------------------------------")
       result.ids.size match {
         case 0 => SentenceId2FeatureVectorSearchResult(originalSentenceId, List.empty[FeatureVectorSearchInfo])
         case _ => SentenceId2FeatureVectorSearchResult(originalSentenceId, result.ids.map(y => {
@@ -182,7 +178,6 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
         case _ =>  (validAsos, extractFeatureVectorSearchInfoList(validAsos, sentenceId2FeatureVectorSearchResult))
       }
     }else{
-      logger.info("check2----------------------------------------------------------------------------------------")
       (List.empty[AnalyzedSentenceObjects], List.empty[SentenceId2FeatureVectorSearchResult])
     }
   }
@@ -425,102 +420,4 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     }
   }
 
-
-  private def neo4JData2AnalyzedSentenceObjectByPropositionId(propositionId:String, sentenceType:Int):AnalyzedSentenceObjects = {
-    val nodeType: String = ToposoidUtils.getNodeType(sentenceType)
-    val query = "MATCH (n1:%s)-[e]->(n2:%s) WHERE n1.propositionId='%s' AND n2.propositionId='%s' RETURN n1, e, n2".format(nodeType, nodeType, propositionId, propositionId)
-    val jsonStr: String = getCypherQueryResult(query, "")
-    logger.info("check3-----------------------------------------------------------------------------------------------")
-    logger.info(query)
-    logger.info(jsonStr)
-    logger.info("-----------------------------------------------------------------------------------------------")
-    //If there is even one that does not match, it is useless to search further
-    val neo4jRecords: Neo4jRecords = Json.parse(jsonStr).as[Neo4jRecords]
-
-    val neo4jDataInfo = neo4jRecords.records.foldLeft(Map.empty[String, (Map[String, KnowledgeBaseNode], List[KnowledgeBaseEdge])]) {
-      (acc, x) => {
-        val node1: KnowledgeBaseNode = x(0).value.logicNode
-        val node2: KnowledgeBaseNode = x(2).value.logicNode
-
-        val key = node1.nodeId.substring(0, node1.nodeId.lastIndexOf("-"))
-        val key2 = node2.nodeId.substring(0, node2.nodeId.lastIndexOf("-"))
-        if (!key.equals(key2)) {
-          acc
-        } else {
-          val knowledgeBaseNode1 = KnowledgeBaseNode(
-            node1.nodeId,
-            node1.propositionId,
-            node1.currentId,
-            node1.parentId,
-            node1.isMainSection,
-            node1.surface,
-            node1.normalizedName,
-            node1.dependType,
-            node1.caseType,
-            node1.namedEntity,
-            node1.rangeExpressions,
-            node1.categories,
-            node1.domains,
-            node1.isDenialWord,
-            node1.isConditionalConnection,
-            node1.normalizedNameYomi,
-            node1.surfaceYomi,
-            node1.modalityType,
-            node1.logicType,
-            node1.nodeType,
-            node1.lang)
-
-          val knowledgeBaseNode2 = KnowledgeBaseNode(
-            node2.nodeId,
-            node2.propositionId,
-            node2.currentId,
-            node2.parentId,
-            node2.isMainSection,
-            node2.surface,
-            node2.normalizedName,
-            node2.dependType,
-            node2.caseType,
-            node2.namedEntity,
-            node2.rangeExpressions,
-            node2.categories,
-            node2.domains,
-            node2.isDenialWord,
-            node2.isConditionalConnection,
-            node2.normalizedNameYomi,
-            node2.surfaceYomi,
-            node2.modalityType,
-            node2.logicType,
-            node2.nodeType,
-            node2.lang)
-          val edge: KnowledgeBaseEdge = x(1).value.logicEdge
-          val logicEdge: KnowledgeBaseEdge = KnowledgeBaseEdge(node1.nodeId, node2.nodeId, edge.caseStr, edge.dependType, edge.logicType, edge.lang)
-
-          val dataInfo: (Map[String, KnowledgeBaseNode], List[KnowledgeBaseEdge]) = acc.isDefinedAt(key) match {
-            case true => acc.get(key).get
-            case _ => (Map.empty[String, KnowledgeBaseNode], List.empty[KnowledgeBaseEdge])
-          }
-
-          val nodeAndEdgeInfo: (Map[String, KnowledgeBaseNode], List[KnowledgeBaseEdge]) = (dataInfo._1 ++ Map(node1.nodeId -> knowledgeBaseNode1) ++ Map(node2.nodeId -> knowledgeBaseNode2), dataInfo._2 :+ logicEdge)
-          acc ++ Map(key -> nodeAndEdgeInfo)
-        }
-      }
-    }
-    val deductionResult: Map[String, DeductionResult] =
-      Map(
-        PREMISE.index.toString -> DeductionResult(false, List.empty[String], ""),
-        CLAIM.index.toString -> DeductionResult(false, List.empty[String], "")
-      )
-    val asoList = neo4jDataInfo.map(x => {
-      val sentenceId = x._2._1.head._2.nodeId.substring(0, x._2._1.head._2.nodeId.lastIndexOf("-"))
-      val lang = x._2._1.head._2.lang
-      AnalyzedSentenceObject(x._2._1, x._2._2, sentenceType, sentenceId, lang, deductionResult)
-    }).toList
-    AnalyzedSentenceObjects(asoList)
-  }
-  /*
-  }match {
-    case Success(s) => s
-    case Failure(e) => throw e
-  }
-   */
 }
