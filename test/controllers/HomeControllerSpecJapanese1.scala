@@ -42,7 +42,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
 
   before {
     Neo4JAccessor.delete()
-    Thread.sleep(5000)
+    Thread.sleep(7000)
   }
 
   override def beforeAll(): Unit = {
@@ -73,7 +73,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
       List.empty[PropositionRelation])
     Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
     FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-    Thread.sleep(5000)
+    Thread.sleep(7000)
   }
 
   private def deleteFeatureVector(propositionId:String, lang:String, sentenceId:String):Unit = {
@@ -120,7 +120,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
         List.empty[PropositionRelation])
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
+      Thread.sleep(7000)
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge = List.empty[KnowledgeForParser]
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
@@ -156,7 +156,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
         List.empty[PropositionRelation])
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
+      Thread.sleep(7000)
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge = List.empty[KnowledgeForParser]
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
@@ -194,7 +194,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
         List.empty[PropositionRelation])
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
+      Thread.sleep(7000)
 
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge =List.empty[KnowledgeForParser]
@@ -236,7 +236,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
         List.empty[PropositionRelation])
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
+      Thread.sleep(7000)
 
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge = List.empty[KnowledgeForParser]
@@ -333,7 +333,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
         List.empty[PropositionRelation])
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
+      Thread.sleep(7000)
 
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
@@ -375,7 +375,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
         List.empty[PropositionRelation])
       Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
       FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
+      Thread.sleep(7000)
 
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
