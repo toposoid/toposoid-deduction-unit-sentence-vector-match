@@ -20,7 +20,7 @@ import com.ideal.linked.common.DeploymentConverter.conf
 import com.ideal.linked.toposoid.common.{CLAIM, PREMISE, ToposoidUtils}
 import com.ideal.linked.toposoid.deduction.common.AnalyzedSentenceObjectUtils.makeSentence
 import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{existALlPropositionIdEqualId, getCypherQueryResult, havePremiseNode, neo4JData2AnalyzedSentenceObjectByPropositionId}
-import com.ideal.linked.toposoid.deduction.common.{AnalyzedSentenceObjectUtils, FacadeForAccessNeo4J, SentenceInfo}
+import com.ideal.linked.toposoid.deduction.common.{SentenceInfo}
 import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorSearchResult, SingleFeatureVectorForSearch}
 import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.Knowledge
@@ -269,28 +269,38 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     val (searchResults, propositionIds) = aso.edgeList.foldLeft((List.empty[List[Neo4jRecordMap]], List.empty[String])){
       (acc, x) => analyzeGraphKnowledge(x, aso.nodeMap, aso.sentenceType, acc)
     }
+    logger.info("check1")
     if(propositionIds.size == 0) return aso
-
+    logger.info("check2")
     if(aso.sentenceType == 0){
       //f the proposition is premise, check only if the same proposition exists as claim
+      logger.info("check3")
       checkFinal(propositionIds, aso, searchResults)
     }else if(aso.sentenceType == 1){
       //If the proposition is a claim, check whether the proposition holds only as a claim or through premise.
+      logger.info("check4")
       val onlyClaimPropositionIds = propositionIds.filterNot(havePremiseNode(_))
       if (onlyClaimPropositionIds.size > 0){
         //A case where a proposition (claim) can be true only by claim in the knowledge base
+        logger.info("check5")
         checkFinal(onlyClaimPropositionIds, aso, searchResults)
       }else{
         //The case where the proposition (claim) becomes true via premis in knowledge base
+        logger.info("check6")
         val claimHavingPremisePropositionIds = propositionIds.filter(havePremiseNode(_))
+        logger.info("check7")
         val checkedPremiseAso =  checkClaimHavingPremise(claimHavingPremisePropositionIds.distinct, aso)
+        logger.info("check8")
         if(checkedPremiseAso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds.size > 0){
+          logger.info("check9")
           checkFinal(claimHavingPremisePropositionIds, checkedPremiseAso, searchResults)
         }else{
+          logger.info("check10")
           aso
         }
       }
     }else{
+      logger.info("check11")
       aso
     }
   }
@@ -318,19 +328,19 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
   private def checkClaimHavingPremiseImpl(targetPropositionId:String, aso:AnalyzedSentenceObject): AnalyzedSentenceObject = {
     //Pick up a node with the same surface layer as the Premise connected from Claim as x
     val query = "MATCH (n:PremiseNode)-[*]-(m:ClaimNode), (x:ClaimNode) WHERE m.propositionId ='%s' AND x.surface=n.surface  RETURN (n), (x)".format(targetPropositionId)
-    val jsonStr = FacadeForAccessNeo4J.getCypherQueryResult(query, "x")
+    val jsonStr = getCypherQueryResult(query, "x")
     val neo4jRecords:Neo4jRecords = Json.parse(jsonStr).as[Neo4jRecords]
 
     if(neo4jRecords.records.size > 0){
       val targetPropositionId1Set = neo4jRecords.records.map(_.filter(_.key.equals("x")).map(_.value.logicNode.propositionId)).flatten.toSet
-      val targetAnalyzedSentenceObjectsFromNeo4j:List[AnalyzedSentenceObject] = FacadeForAccessNeo4J.neo4JData2AnalyzedSentenceObjectByPropositionId(targetPropositionId, 0).analyzedSentenceObjects
+      val targetAnalyzedSentenceObjectsFromNeo4j:List[AnalyzedSentenceObject] = neo4JData2AnalyzedSentenceObjectByPropositionId(targetPropositionId, 0).analyzedSentenceObjects
 
       val checkedAso:Set[AnalyzedSentenceObject] = targetPropositionId1Set.map(targetPropositionId1 =>{
-        val sentenceInfo1 = AnalyzedSentenceObjectUtils.makeSentence(FacadeForAccessNeo4J.neo4JData2AnalyzedSentenceObjectByPropositionId(targetPropositionId1, 1).analyzedSentenceObjects.head)
+        val sentenceInfo1 = makeSentence(neo4JData2AnalyzedSentenceObjectByPropositionId(targetPropositionId1, 1).analyzedSentenceObjects.head)
         //Acquired information x from Neo4j contains multiple pieces of text information (for example, partially matching items, etc.), and it is necessary to compare each of them.
         targetAnalyzedSentenceObjectsFromNeo4j.foldLeft(aso){
           (acc, x) => {
-            val sentenceInfo2 = AnalyzedSentenceObjectUtils.makeSentence(x)
+            val sentenceInfo2 = makeSentence(x)
             if (sentenceInfo1.get(1).get.sentence.equals(sentenceInfo2.get(0).get.sentence)) {
               val coveredPropositionIds = List(sentenceInfo1.get(1).get.propositionId, sentenceInfo2.get(0).get.propositionId)
               //Here, only the proposalId is added without outputting the final result. Leave the final decision to the checkFinal function
@@ -422,4 +432,3 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
   }
 
 }
-
