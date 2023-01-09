@@ -41,9 +41,21 @@ jobs:
             docker-compose -f docker-compose-workflow.yml up -d toposoid-common-nlp-japanese-web
             docker-compose -f docker-compose-workflow.yml up -d toposoid-sentence-parser-japanese-web
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese1'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese2'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese3'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese4'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml rm -fsv toposoid-common-nlp-japanese-web
             docker-compose -f docker-compose-workflow.yml rm -fsv toposoid-sentence-parser-japanese-web
             docker rmi --force toposoid/toposoid-sentence-parser-japanese-web:0.4-SNAPSHOT-workflow
@@ -55,8 +67,17 @@ jobs:
             docker-compose -f docker-compose-workflow.yml up -d toposoid-common-nlp-english-web
             docker-compose -f docker-compose-workflow.yml up -d toposoid-sentence-parser-english-web
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English1'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English2'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English3'"
+            docker-compose -f docker-compose-workflow.yml rm -fsv vald
+            rm -f vald-config/backup/*
+            docker-compose -f docker-compose-workflow.yml up -d vald
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English4'"
       - name: Docker meta
         id: docker_meta
