@@ -53,6 +53,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
       val remakeAnalyzedSentenceObjects:List[AnalyzedSentenceObjects] = remakeAnalyzedSentenceObjectsInfo._1
       val featureVectorSearchInfoList:List[SentenceId2FeatureVectorSearchResult] = remakeAnalyzedSentenceObjectsInfo._2
       if(remakeAnalyzedSentenceObjects.size == 0){
+        logger.info("check-----------------------------------------------------------------")
         Ok(Json.toJson(analyzedSentenceObjects)).as(JSON)
       }else{
         val deducedAnalyzedSentenceObjects:List[AnalyzedSentenceObjects] = remakeAnalyzedSentenceObjects.map( deduction(_))
@@ -269,38 +270,27 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     val (searchResults, propositionIds) = aso.edgeList.foldLeft((List.empty[List[Neo4jRecordMap]], List.empty[String])){
       (acc, x) => analyzeGraphKnowledge(x, aso.nodeMap, aso.sentenceType, acc)
     }
-    logger.info("check1")
     if(propositionIds.size == 0) return aso
-    logger.info("check2")
     if(aso.sentenceType == 0){
       //f the proposition is premise, check only if the same proposition exists as claim
-      logger.info("check3")
       checkFinal(propositionIds, aso, searchResults)
     }else if(aso.sentenceType == 1){
       //If the proposition is a claim, check whether the proposition holds only as a claim or through premise.
-      logger.info("check4")
       val onlyClaimPropositionIds = propositionIds.filterNot(havePremiseNode(_))
       if (onlyClaimPropositionIds.size > 0){
         //A case where a proposition (claim) can be true only by claim in the knowledge base
-        logger.info("check5")
         checkFinal(onlyClaimPropositionIds, aso, searchResults)
       }else{
         //The case where the proposition (claim) becomes true via premis in knowledge base
-        logger.info("check6")
         val claimHavingPremisePropositionIds = propositionIds.filter(havePremiseNode(_))
-        logger.info("check7")
         val checkedPremiseAso =  checkClaimHavingPremise(claimHavingPremisePropositionIds.distinct, aso)
-        logger.info("check8")
         if(checkedPremiseAso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds.size > 0){
-          logger.info("check9")
           checkFinal(claimHavingPremisePropositionIds, checkedPremiseAso, searchResults)
         }else{
-          logger.info("check10")
           aso
         }
       }
     }else{
-      logger.info("check11")
       aso
     }
   }
