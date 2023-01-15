@@ -3,6 +3,9 @@ This is a WEB API that works as a microservice within the Toposoid project.
 Toposoid is a knowledge base construction platform.(see [Toposoid　Root Project](https://github.com/toposoid/toposoid.git))
 This microservice provides the ability to identify the input text as a distributed representation using the [Bert model](https://github.com/google-research/bert) and match it against the knowledge graph. 
 
+[![Test And Build](https://github.com/toposoid/toposoid-deduction-unit-sentence-vector-match-web/actions/workflows/action.yml/badge.svg)](https://github.com/toposoid/toposoid-deduction-unit-sentence-vector-match-web/actions/workflows/action.yml)
+
+<img width="1036" src="https://user-images.githubusercontent.com/82787843/212535858-f09389d4-f9f5-4ced-9e73-32650e7321fe.png">
 
 ## Requirements
 * Docker version 20.10.x, or later
@@ -17,6 +20,22 @@ This microservice provides the ability to identify the input text as a distribut
 docker-compose up -d
 ```
 It takes more than 20 minutes to pull the Docker image for the first time.
+If vald does not start due to an error, commenting out the following part in docker-compose.yml may work.
+```yml
+  vald:
+    image: vdaas/vald-agent-ngt:v1.6.3
+    #user: 1000:1000
+    volumes:
+      - ./vald-config:/etc/server
+      #- /etc/passwd:/etc/passwd:ro
+      #- /etc/group:/etc/group:ro
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.10
+    ports:
+      - 8081:8081
+```
+
 ## Usage
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
