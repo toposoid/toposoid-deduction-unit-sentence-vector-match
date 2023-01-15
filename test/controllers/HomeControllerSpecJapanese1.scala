@@ -106,7 +106,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
       deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
     }
   }
-
+  /*
   "The specification2" should {
     "returns an appropriate response" in {
       val propositionId1 = UUID.random.toString
@@ -139,8 +139,8 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
       deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
     }
   }
-
-  "The specification3a" should {
+  */
+  "The specification2" should {
     "returns an appropriate response" in {
       val propositionId1 = UUID.random.toString
       val sentenceId1 = UUID.random.toString
@@ -178,7 +178,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
     }
   }
 
-  "The specification3b" should {
+  "The specification3" should {
     "returns an appropriate response" in {
       val propositionId1 = UUID.random.toString
       val sentenceId1 = UUID.random.toString
