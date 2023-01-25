@@ -17,9 +17,10 @@ This microservice provides the ability to identify the input text as a distribut
 
 ## Setup
 ```bssh
-docker-compose up -d
+rm -f vald-config/backup/* && docker-compose up -d
 ```
 It takes more than 20 minutes to pull the Docker image for the first time.
+* **The docker-compose.yml configuration in this repository does not take into account vald persistence.**
 If vald does not start due to an error, commenting out the following part in docker-compose.yml may work.
 ```yml
   vald:
