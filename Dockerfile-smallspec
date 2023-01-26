@@ -1,4 +1,4 @@
-FROM toposoid/toposoid-scala-lib:0.4-SNAPSHOT
+FROM toposoid/toposoid-scala-lib:0.4
 
 WORKDIR /app
 ARG TARGET_BRANCH
@@ -19,7 +19,7 @@ RUN git clone https://github.com/toposoid/toposoid-deduction-common.git \
 && sbt playUpdateSecret 1> /dev/null \
 && sbt dist \
 && cd /app/toposoid-deduction-unit-sentence-vector-match-web/target/universal \
-&& unzip -o toposoid-deduction-unit-sentence-vector-match-web-0.4-SNAPSHOT.zip
+&& unzip -o toposoid-deduction-unit-sentence-vector-match-web-0.4.zip
 
 
 COPY ./docker-entrypoint.sh /app/

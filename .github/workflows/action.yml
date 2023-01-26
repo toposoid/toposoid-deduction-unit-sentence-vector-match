@@ -9,7 +9,7 @@ env:
   PJ_ACTOR: toposoid
   PJ_REPO: toposoid-deduction-unit-sentence-vector-match-web
   PJ_BRANCH: feature
-  PJ_VERSION: 0.4-SNAPSHOT
+  PJ_VERSION: 0.4
 jobs:
   unit-test_toposoid-deduction-unit-sentence-vector-match-web:
     runs-on: self-hosted
