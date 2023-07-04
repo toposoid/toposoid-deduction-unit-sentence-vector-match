@@ -9,7 +9,7 @@ networks:
 
 services:
   toposoid-deduction-unit-sentence-vector-match-web:
-    image: toposoid/toposoid-deduction-unit-sentence-vector-match-web:0.4
+    image: toposoid/toposoid-deduction-unit-sentence-vector-match-web:0.5-SNAPSHOT
     environment:
       - GRAPHDB_HOST=172.30.0.2
       - PRIVATE_IP_ADDRESS=localhost
@@ -30,7 +30,7 @@ services:
       - toposoid-common-nlp-japanese-web
       - toposoid-common-nlp-english-web
   toposoid-common-nlp-japanese-web:
-    image: toposoid/toposoid-common-nlp-japanese-web:0.4
+    image: toposoid/toposoid-common-nlp-japanese-web:0.5-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=172.30.0.5
       - SYNONYM_NOUN_SIMILARITY_THRESHHOLD_JP=0.52
@@ -45,7 +45,7 @@ services:
     ports:
       - 9006:9006
   toposoid-common-nlp-english-web:
-    image: toposoid/toposoid-common-nlp-english-web:0.4
+    image: toposoid/toposoid-common-nlp-english-web:0.5-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=172.30.0.7
       - SYNONYM_NOUN_SIMILARITY_THRESHHOLD_EN=0.52
@@ -59,7 +59,7 @@ services:
     ports:
       - 9008:9008
   scala-data-accessor-neo4j-web:
-    image: toposoid/scala-data-accessor-neo4j-web:0.4
+    image: toposoid/scala-data-accessor-neo4j-web:0.5-SNAPSHOT
     environment:
       - GRAPHDB_HOST=172.30.0.2
       - PRIVATE_IP_ADDRESS=172.30.0.3
@@ -84,7 +84,7 @@ services:
       app_net:
         ipv4_address: 172.30.0.2
   data-accessor-vald-web:
-    image: toposoid/data-accessor-vald-web:0.4
+    image: toposoid/data-accessor-vald-web:0.5-SNAPSHOT
     environment:
       - TOPOSOID_VALD_HOST=172.30.0.10
       - TOPOSOID_VALD_PORT=8081
