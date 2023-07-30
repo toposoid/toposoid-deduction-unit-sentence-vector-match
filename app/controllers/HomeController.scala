@@ -389,8 +389,8 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
 
     val sourceKey = edge.sourceId
     val targetKey = edge.destinationId
-    val sourceNodeSurface = nodeMap.get(sourceKey).getOrElse().asInstanceOf[KnowledgeBaseNode].surface
-    val destinationNodeSurface = nodeMap.get(targetKey).getOrElse().asInstanceOf[KnowledgeBaseNode].surface
+    val sourceNodeSurface = nodeMap.get(sourceKey).getOrElse().asInstanceOf[KnowledgeBaseNode].predicateArgumentStructure.surface
+    val destinationNodeSurface = nodeMap.get(targetKey).getOrElse().asInstanceOf[KnowledgeBaseNode].predicateArgumentStructure.surface
     val nodeType:String = ToposoidUtils.getNodeType(sentenceType)
 
     val initAcc = sentenceType match{
