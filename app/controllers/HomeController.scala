@@ -22,7 +22,7 @@ import com.ideal.linked.toposoid.deduction.common.AnalyzedSentenceObjectUtils.ma
 import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{existALlPropositionIdEqualId, getCypherQueryResult, havePremiseNode, neo4JData2AnalyzedSentenceObjectByPropositionId}
 import com.ideal.linked.toposoid.deduction.common.SentenceInfo
 import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorSearchResult, SingleFeatureVectorForSearch}
-import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode}
+import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode, KnowledgeFeatureNode, LocalContextForFeature}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.Knowledge
 import com.ideal.linked.toposoid.protocol.model.base.{AnalyzedSentenceObject, AnalyzedSentenceObjects, DeductionResult}
 import com.ideal.linked.toposoid.protocol.model.neo4j.{Neo4jRecordMap, Neo4jRecords}
@@ -116,8 +116,8 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     val sentenceMap:List[Map[Int, SentenceInfo]] =  analyzedSentenceObjects.analyzedSentenceObjects.map(makeSentence(_))
     val sentenceId2FeatureVectorSearchResult:List[SentenceId2FeatureVectorSearchResult] = sentence2PropositionId(sentenceMap)
 
-    val premiseCount = analyzedSentenceObjects.analyzedSentenceObjects.filter(_.sentenceType == PREMISE.index).size
-    val claimCount = analyzedSentenceObjects.analyzedSentenceObjects.filter(_.sentenceType == CLAIM.index).size
+    val premiseCount = analyzedSentenceObjects.analyzedSentenceObjects.filter(_.knowledgeFeatureNode.sentenceType == PREMISE.index).size
+    val claimCount = analyzedSentenceObjects.analyzedSentenceObjects.filter(_.knowledgeFeatureNode.sentenceType == CLAIM.index).size
     val havePremise:Boolean =  premiseCount > 0
     val haveClaim:Boolean =  claimCount > 0
 
@@ -157,7 +157,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     }else if(havePremise && existPremiseInNeo4j){
       val premiseIdsSet:Set[String] = sentenceId2FeatureVectorSearchResult.filter(_.featureVectorSearchInfoList.filter(_.sentenceType == PREMISE.index).size > 0).map(_.featureVectorSearchInfoList.map(_.propositionId)).flatten.toSet
       //claimがないという命題はないので、与えられた命題claimをセットする。
-      val claimList:List[AnalyzedSentenceObject] = analyzedSentenceObjects.analyzedSentenceObjects.filter(_.sentenceType == CLAIM.index)
+      val claimList:List[AnalyzedSentenceObject] = analyzedSentenceObjects.analyzedSentenceObjects.filter(_.knowledgeFeatureNode.sentenceType == CLAIM.index)
       //valdとneo4jで同期が取れていない場合があるのでケア
       //TODO:下記要確認
       //-----------------------------------------------------------------------------------------------
@@ -167,7 +167,14 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
         //しかし、claimとしてではなくpremise推論したいのではないので、sentenceTypeをpremiseに変更
         claimAos.analyzedSentenceObjects.foldLeft(acc){
           (acc2, y) => {
-            acc2 :+ AnalyzedSentenceObjects(List(AnalyzedSentenceObject(y.nodeMap, y.edgeList, PREMISE.index, y.sentenceId, y.lang, y.deductionResultMap)) ::: claimList)
+            val knowledgeFeatureNode = KnowledgeFeatureNode(y.knowledgeFeatureNode.nodeId,
+                                                            y.knowledgeFeatureNode.propositionId,
+                                                            y.knowledgeFeatureNode.sentenceId,
+                                                            y.knowledgeFeatureNode.sentence,
+                                                            PREMISE.index,
+                                                            y.knowledgeFeatureNode.localContextForFeature,
+                                                            y.knowledgeFeatureNode.extentText)
+            acc2 :+ AnalyzedSentenceObjects(List(AnalyzedSentenceObject(y.nodeMap, y.edgeList, knowledgeFeatureNode, y.deductionResultMap)) ::: claimList)
           }
         }
       }}
@@ -210,17 +217,17 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
         originalAnalyzedSentenceObjects.analyzedSentenceObjects.map(x => {
           //与えられた命題をセンテンスごとに見て行く。センテンスにはIDが付けられるので、それを取得
           //与えられたsentenceIdのセンテンスと類似した文章がNeo4jに登録されえている場合、featureVectorSearchInfoListに存在しているはずなのでそれのsentenceIdを取得する。
-          val candidateSentenceIds:Set[(String)] = featureVectorSearchInfoList.filter(_.originalSentenceId == x.sentenceId).size > 0 match {
-            case true => featureVectorSearchInfoList.filter(_.originalSentenceId == x.sentenceId).map(_.featureVectorSearchInfoList.map(_.sentenceId)).flatten.toSet
+          val candidateSentenceIds:Set[(String)] = featureVectorSearchInfoList.filter(_.originalSentenceId == x.knowledgeFeatureNode.sentenceId).size > 0 match {
+            case true => featureVectorSearchInfoList.filter(_.originalSentenceId == x.knowledgeFeatureNode.sentenceId).map(_.featureVectorSearchInfoList.map(_.sentenceId)).flatten.toSet
             case _ => Set.empty[String]
           }
 
           //上記のpropositionIdとsentenceIdを持っているcorrectAnalyzedSentenceObjectsが対象とるなる。
-          val deductionResultMaps:List[Map[String,DeductionResult]]=  correctAnalyzedSentenceObjects.map(_.analyzedSentenceObjects.filter(candidateSentenceIds contains _.sentenceId).map(_.deductionResultMap)).flatten
-          val targetDeductionResultMaps = deductionResultMaps.filter(_.get(x.sentenceType.toString).get.status)
+          val deductionResultMaps:List[Map[String,DeductionResult]]=  correctAnalyzedSentenceObjects.map(_.analyzedSentenceObjects.filter(candidateSentenceIds contains _.knowledgeFeatureNode.sentenceId).map(_.deductionResultMap)).flatten
+          val targetDeductionResultMaps = deductionResultMaps.filter(_.get(x.knowledgeFeatureNode.sentenceType.toString).get.status)
 
           targetDeductionResultMaps.size > 0 match {
-            case true => AnalyzedSentenceObject(x.nodeMap, x.edgeList, x.sentenceType, x.sentenceId, x.lang, getDeductionResultMap(x.sentenceType, targetDeductionResultMaps))
+            case true => AnalyzedSentenceObject(x.nodeMap, x.edgeList, x.knowledgeFeatureNode, getDeductionResultMap(x.knowledgeFeatureNode.sentenceType, targetDeductionResultMaps))
             case _ => x
           }
         })
@@ -267,13 +274,13 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
   private def analyze(aso:AnalyzedSentenceObject): AnalyzedSentenceObject ={
 
     val (searchResults, propositionIds) = aso.edgeList.foldLeft((List.empty[List[Neo4jRecordMap]], List.empty[String])){
-      (acc, x) => analyzeGraphKnowledge(x, aso.nodeMap, aso.sentenceType, acc)
+      (acc, x) => analyzeGraphKnowledge(x, aso.nodeMap, aso.knowledgeFeatureNode.sentenceType, acc)
     }
     if(propositionIds.size == 0) return aso
-    if(aso.sentenceType == 0){
+    if(aso.knowledgeFeatureNode.sentenceType == 0){
       //f the proposition is premise, check only if the same proposition exists as claim
       checkFinal(propositionIds, aso, searchResults)
-    }else if(aso.sentenceType == 1){
+    }else if(aso.knowledgeFeatureNode.sentenceType == 1){
       //If the proposition is a claim, check whether the proposition holds only as a claim or through premise.
       val onlyClaimPropositionIds = propositionIds.filterNot(havePremiseNode(_))
       if (onlyClaimPropositionIds.size > 0){
@@ -283,7 +290,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
         //The case where the proposition (claim) becomes true via premis in knowledge base
         val claimHavingPremisePropositionIds = propositionIds.filter(havePremiseNode(_))
         val checkedPremiseAso =  checkClaimHavingPremise(claimHavingPremisePropositionIds.distinct, aso)
-        if(checkedPremiseAso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds.size > 0){
+        if(checkedPremiseAso.deductionResultMap.get(aso.knowledgeFeatureNode.sentenceType.toString).get.matchedPropositionIds.size > 0){
           checkFinal(claimHavingPremisePropositionIds, checkedPremiseAso, searchResults)
         }else{
           aso
@@ -303,7 +310,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
   private def checkClaimHavingPremise(targetPropositionIds:List[String], aso:AnalyzedSentenceObject):AnalyzedSentenceObject ={
     for(propositionId <- targetPropositionIds){
       val updateAso = checkClaimHavingPremiseImpl(propositionId, aso)
-      if(updateAso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds.size > 0) return updateAso
+      if(updateAso.deductionResultMap.get(aso.knowledgeFeatureNode.sentenceType.toString).get.matchedPropositionIds.size > 0) return updateAso
     }
     aso
   }
@@ -333,17 +340,17 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
             if (sentenceInfo1.get(1).get.sentence.equals(sentenceInfo2.get(0).get.sentence)) {
               val coveredPropositionIds = List(sentenceInfo1.get(1).get.propositionId, sentenceInfo2.get(0).get.propositionId)
               //Here, only the proposalId is added without outputting the final result. Leave the final decision to the checkFinal function
-              val deductionResult: DeductionResult = new DeductionResult(false, aso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds ::: coveredPropositionIds, "")
-              val updateDeductionResultMap = aso.deductionResultMap.updated(aso.sentenceType.toString, deductionResult)
-              AnalyzedSentenceObject(aso.nodeMap, aso.edgeList, aso.sentenceType, aso.sentenceId, aso.lang, updateDeductionResultMap)
+              val deductionResult: DeductionResult = new DeductionResult(false, aso.deductionResultMap.get(aso.knowledgeFeatureNode.sentenceType.toString).get.matchedPropositionIds ::: coveredPropositionIds, "")
+              val updateDeductionResultMap = aso.deductionResultMap.updated(aso.knowledgeFeatureNode.sentenceType.toString, deductionResult)
+              AnalyzedSentenceObject(aso.nodeMap, aso.edgeList, aso.knowledgeFeatureNode, updateDeductionResultMap)
             }else{
               acc
             }
           }}
       })
       //If there are multiple premises, all corresponding Claims are required
-      if(checkedAso.filter(_.deductionResultMap(aso.sentenceType.toString).matchedPropositionIds.size > 0).size == targetAnalyzedSentenceObjectsFromNeo4j.size){
-        checkedAso.filter(_.deductionResultMap(aso.sentenceType.toString).matchedPropositionIds.size > 0).head
+      if(checkedAso.filter(_.deductionResultMap(aso.knowledgeFeatureNode.sentenceType.toString).matchedPropositionIds.size > 0).size == targetAnalyzedSentenceObjectsFromNeo4j.size){
+        checkedAso.filter(_.deductionResultMap(aso.knowledgeFeatureNode.sentenceType.toString).matchedPropositionIds.size > 0).head
       }else{
         aso
       }
@@ -371,10 +378,10 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     if(coveredPropositionIds.size == 0) return aso
     val status = true
     //selectedPropositions includes trivialClaimsPropositionIds
-    val additionalPropositionIds = aso.deductionResultMap.get(aso.sentenceType.toString).get.matchedPropositionIds
+    val additionalPropositionIds = aso.deductionResultMap.get(aso.knowledgeFeatureNode.sentenceType.toString).get.matchedPropositionIds
     val deductionResult:DeductionResult = new DeductionResult(status, coveredPropositionIds:::additionalPropositionIds, "sentence-vector-match")
-    val updateDeductionResultMap = aso.deductionResultMap.updated(aso.sentenceType.toString, deductionResult)
-    AnalyzedSentenceObject(aso.nodeMap, aso.edgeList, aso.sentenceType, aso.sentenceId, aso.lang, updateDeductionResultMap)
+    val updateDeductionResultMap = aso.deductionResultMap.updated(aso.knowledgeFeatureNode.sentenceType.toString, deductionResult)
+    AnalyzedSentenceObject(aso.nodeMap, aso.edgeList, aso.knowledgeFeatureNode, updateDeductionResultMap)
 
   }
 
