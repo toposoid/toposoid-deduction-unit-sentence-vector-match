@@ -172,8 +172,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
                                                             y.knowledgeFeatureNode.sentenceId,
                                                             y.knowledgeFeatureNode.sentence,
                                                             PREMISE.index,
-                                                            y.knowledgeFeatureNode.localContextForFeature,
-                                                            y.knowledgeFeatureNode.extentText)
+                                                            y.knowledgeFeatureNode.localContextForFeature)
             acc2 :+ AnalyzedSentenceObjects(List(AnalyzedSentenceObject(y.nodeMap, y.edgeList, knowledgeFeatureNode, y.deductionResultMap)) ::: claimList)
           }
         }
