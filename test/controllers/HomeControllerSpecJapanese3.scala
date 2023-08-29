@@ -240,15 +240,6 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       registSingleClaim(KnowledgeForParser(propositionId2, sentenceId2, knowledge2))
       registSingleClaim(KnowledgeForParser(propositionId3, sentenceId3, knowledge3))
 
-      val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
-        List(KnowledgeForParser(propositionId2, sentenceId2, knowledge1)),
-        List.empty[PropositionRelation],
-        List(KnowledgeForParser(propositionId2, sentenceId3, knowledge2), KnowledgeForParser(propositionId2, sentenceId4, knowledge3)),
-        List(PropositionRelation("AND", 0, 1)))
-      Sentence2Neo4jTransformer.createGraph(knowledgeSentenceSetForParser)
-      FeatureVectorizer.createVector(knowledgeSentenceSetForParser)
-      Thread.sleep(5000)
-
       val propositionIdForInference = UUID.random.toString
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
