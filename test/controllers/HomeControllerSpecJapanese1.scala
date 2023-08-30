@@ -400,6 +400,8 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 1)
       deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
+      deleteFeatureVector(propositionId2, "ja_JP", sentenceId2)
+      deleteFeatureVector(propositionId2, "ja_JP", sentenceId3)
     }
   }
 
