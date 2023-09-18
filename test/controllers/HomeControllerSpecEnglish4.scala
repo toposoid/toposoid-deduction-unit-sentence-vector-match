@@ -19,8 +19,8 @@ package controllers
 import akka.util.Timeout
 import com.ideal.linked.common.DeploymentConverter.conf
 import com.ideal.linked.data.accessor.neo4j.Neo4JAccessor
-import com.ideal.linked.toposoid.common.ToposoidUtils
-import com.ideal.linked.toposoid.knowledgebase.featurevector.model.FeatureVectorId
+import com.ideal.linked.toposoid.common.{CLAIM, PREMISE, ToposoidUtils}
+import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorId, FeatureVectorIdentifier}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.{Knowledge, KnowledgeSentenceSet, PropositionRelation}
 import com.ideal.linked.toposoid.protocol.model.base.AnalyzedSentenceObjects
 import com.ideal.linked.toposoid.protocol.model.parser.{InputSentence, InputSentenceForParser, KnowledgeForParser, KnowledgeSentenceSetForParser}
@@ -77,8 +77,8 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
     Thread.sleep(5000)
   }
 
-  private def deleteFeatureVector(propositionId: String, lang: String, sentenceId: String): Unit = {
-    val json: String = Json.toJson(FeatureVectorId(id = propositionId + "#" + lang + "#" + sentenceId)).toString()
+  private def deleteFeatureVector(featureVectorIdentifier: FeatureVectorIdentifier): Unit = {
+    val json: String = Json.toJson(featureVectorIdentifier).toString()
     ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "delete")
   }
 
@@ -117,8 +117,8 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 2)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
     }
   }
 
@@ -157,8 +157,8 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 2)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -205,8 +205,8 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId2)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -253,9 +253,9 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId3)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -302,9 +302,9 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId3)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -351,10 +351,10 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId3)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId4)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId4, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -409,12 +409,12 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 2)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 2)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 2)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId3)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId4)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId5)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId6)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId3, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId4, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId5, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId6, sentenceType = CLAIM.index, lang = "en_US"))
     }
   }
 
@@ -462,10 +462,10 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 2)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 2)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId3)
-      deleteFeatureVector(propositionId4, "en_US", sentenceId4)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId4, featureId = sentenceId4, sentenceType = CLAIM.index, lang = "en_US"))
     }
   }
 
@@ -516,11 +516,11 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId3)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId4)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId5)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId3, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId4, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId5, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -572,11 +572,11 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId3)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId4)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId5)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId3, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId4, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId5, sentenceType = CLAIM.index, lang = "en_US"))
 
     }
   }
@@ -630,12 +630,12 @@ class HomeControllerSpecEnglish4 extends PlaySpec with BeforeAndAfter with Befor
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
       assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.havePremiseInGivenProposition).size == 0)
-      deleteFeatureVector(propositionId1, "en_US", sentenceId1)
-      deleteFeatureVector(propositionId2, "en_US", sentenceId2)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId3)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId4)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId5)
-      deleteFeatureVector(propositionId3, "en_US", sentenceId6)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId3, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId4, sentenceType = PREMISE.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId5, sentenceType = CLAIM.index, lang = "en_US"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId6, sentenceType = CLAIM.index, lang = "en_US"))
     }
   }
 }
