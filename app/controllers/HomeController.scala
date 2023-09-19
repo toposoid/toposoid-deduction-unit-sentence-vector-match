@@ -78,7 +78,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     sentenceMap.map(_.map(x => {
       val originalSentenceId = x._2.sentenceId
       val vector = FeatureVectorizer.getVector(Knowledge(x._2.sentence, x._2.lang, "{}"))
-      val json: String = Json.toJson(SingleFeatureVectorForSearch(vector = vector.vector, num = conf.getString("TOPOSOID_VALD_SEARCH_NUM_MAX").toInt, radius = (-1.0f), epsilon = 0.01f, timeout = 50000000000L)).toString()
+      val json: String = Json.toJson(SingleFeatureVectorForSearch(vector = vector.vector, num = conf.getString("TOPOSOID_VALD_SEARCH_NUM_MAX").toInt)).toString()
       val featureVectorSearchResultJson: String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "search")
       val result = Json.parse(featureVectorSearchResultJson).as[FeatureVectorSearchResult]
 
@@ -107,10 +107,10 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
 
     (featureVectorSearchResult.ids zip featureVectorSearchResult.similarities).foldLeft(List.empty[FeatureVectorSearchInfo]){
       (acc, x) => {
-        val idInfo = x._1.split("#")
-        val propositionId = idInfo(0)
-        val lang = idInfo(1)
-        val sentenceId = idInfo(2)
+        val idInfo = x._1
+        val propositionId = idInfo.propositionId
+        val lang = idInfo.lang
+        val sentenceId = idInfo.featureId
         val similarity = x._2
         val query = "MATCH (n) WHERE n.propositionId='%s' AND n.sentenceId='%s' RETURN n".format(propositionId, sentenceId)
         val jsonStr: String = getCypherQueryResult(query, "")
