@@ -80,7 +80,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
 
   private def deleteFeatureVector(featureVectorIdentifier: FeatureVectorIdentifier): Unit = {
     val json: String = Json.toJson(featureVectorIdentifier).toString()
-    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "delete")
+    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_VECTORDB_ACCESSOR_PORT"), "delete")
   }
 
   "The specification21" should {

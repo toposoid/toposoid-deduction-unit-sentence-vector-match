@@ -46,6 +46,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
   }
 
   override def beforeAll(): Unit = {
+    ToposoidUtils.callComponent("{}", conf.getString("TOPOSOID_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_VECTORDB_ACCESSOR_PORT"), "createSchema")
     Neo4JAccessor.delete()
   }
 
@@ -78,7 +79,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
 
   private def deleteFeatureVector(featureVectorIdentifier: FeatureVectorIdentifier): Unit = {
     val json: String = Json.toJson(featureVectorIdentifier).toString()
-    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "delete")
+    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_VECTORDB_ACCESSOR_PORT"), "delete")
   }
 
   "The specification1" should {
@@ -228,7 +229,7 @@ class HomeControllerSpecJapanese1 extends PlaySpec with BeforeAndAfter with Befo
       val sentenceId3 = UUID.random.toString
       val knowledge1 = Knowledge(sentenceA,"ja_JP", "{}")
       val knowledge2 = Knowledge(sentenceB,"ja_JP", "{}")
-      val paraphrase1 = Knowledge(paraphraseA,"ja_JP", "{}", false)
+      val paraphrase1 = Knowledge(paraphraseB,"ja_JP", "{}", false)
       registSingleClaim(KnowledgeForParser(propositionId1, sentenceId1, knowledge1))
 
       val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(

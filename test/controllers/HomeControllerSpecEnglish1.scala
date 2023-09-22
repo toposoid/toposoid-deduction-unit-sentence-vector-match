@@ -77,7 +77,7 @@ class HomeControllerSpecEnglish1 extends PlaySpec with BeforeAndAfter with Befor
 
   private def deleteFeatureVector(featureVectorIdentifier: FeatureVectorIdentifier): Unit = {
     val json: String = Json.toJson(featureVectorIdentifier).toString()
-    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "delete")
+    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_VECTORDB_ACCESSOR_PORT"), "delete")
   }
 
   "The specification1" should {
@@ -228,7 +228,7 @@ class HomeControllerSpecEnglish1 extends PlaySpec with BeforeAndAfter with Befor
       val sentenceId3 = UUID.random.toString
       val knowledge1 = Knowledge(sentenceA,"en_US", "{}")
       val knowledge2 = Knowledge(sentenceB,"en_US", "{}")
-      val paraphrase1 = Knowledge(paraphraseA,"en_US", "{}", false)
+      val paraphrase1 = Knowledge(paraphraseB,"en_US", "{}", false)
       registSingleClaim(KnowledgeForParser(propositionId1, sentenceId1, knowledge1))
 
       val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(

@@ -20,7 +20,7 @@ import com.ideal.linked.common.DeploymentConverter.conf
 import com.ideal.linked.toposoid.common.{CLAIM, PREMISE, ToposoidUtils}
 import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{getAnalyzedSentenceObjectBySentenceId, getCypherQueryResult, neo4JData2AnalyzedSentenceObjectByPropositionId}
 import com.ideal.linked.toposoid.deduction.common.{DeductionUnitController, SentenceInfo}
-import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorSearchResult, SingleFeatureVectorForSearch}
+import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorIdentifier, FeatureVectorSearchResult, SingleFeatureVectorForSearch}
 import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode, KnowledgeFeatureNode, LocalContextForFeature}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.Knowledge
 import com.ideal.linked.toposoid.protocol.model.base.{AnalyzedSentenceObject, AnalyzedSentenceObjects, DeductionResult, MatchedFeatureInfo, MatchedPropositionInfo}
@@ -76,17 +76,29 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
   private def sentence2PropositionId(sentenceMap:List[Map[Int, SentenceInfo]]): List[SentenceId2FeatureVectorSearchResult] = {
 
     sentenceMap.map(_.map(x => {
+      val originalSentenceType = x._1
       val originalSentenceId = x._2.sentenceId
       val vector = FeatureVectorizer.getVector(Knowledge(x._2.sentence, x._2.lang, "{}"))
-      val json: String = Json.toJson(SingleFeatureVectorForSearch(vector = vector.vector, num = conf.getString("TOPOSOID_VALD_SEARCH_NUM_MAX").toInt)).toString()
-      val featureVectorSearchResultJson: String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "search")
+      val json: String = Json.toJson(SingleFeatureVectorForSearch(vector = vector.vector, num = conf.getString("TOPOSOID_VECTORDB_SEARCH_NUM_MAX").toInt)).toString()
+      val featureVectorSearchResultJson: String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_VECTORDB_ACCESSOR_PORT"), "search")
       val result = Json.parse(featureVectorSearchResultJson).as[FeatureVectorSearchResult]
 
-      result.ids.size match {
+      //Claimとして存在している場合に推論が可能になる
+      val (ids, similarities) = (result.ids zip result.similarities).foldLeft((List.empty[FeatureVectorIdentifier], List.empty[Float])){
+        (acc, x) => {
+          x._1.sentenceType match {
+            case CLAIM.index => (acc._1 :+ x._1, acc._2 :+ x._2)
+            case _ => acc
+          }
+        }
+      }
+      val filteredResult = FeatureVectorSearchResult(ids, similarities, result.statusInfo)
+
+      filteredResult.ids.size match {
         case 0 => SentenceId2FeatureVectorSearchResult(originalSentenceId, FeatureVectorSearchInfo(propositionId = "", sentenceId = "", sentenceType = -1, lang = "", similarity = 0))
         case _ => {
           //sentenceごとに最も類似度が高いものを抽出する
-          val featureVectorSearchInfoList = extractExistInNeo4JResult(result, x._1)
+          val featureVectorSearchInfoList = extractExistInNeo4JResult(filteredResult, originalSentenceType)
           val featureVectorSearchSelectInfo =  featureVectorSearchInfoList.size match {
             case 0 => FeatureVectorSearchInfo(propositionId = "", sentenceId = "", sentenceType = -1, lang = "", similarity = 0)
             case _ => featureVectorSearchInfoList.maxBy(_.similarity)
@@ -112,6 +124,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
         val lang = idInfo.lang
         val sentenceId = idInfo.featureId
         val similarity = x._2
+        //val nodeType: String = ToposoidUtils.getNodeType(sentenceType)
         val query = "MATCH (n) WHERE n.propositionId='%s' AND n.sentenceId='%s' RETURN n".format(propositionId, sentenceId)
         val jsonStr: String = getCypherQueryResult(query, "")
         val neo4jRecords: Neo4jRecords = Json.parse(jsonStr).as[Neo4jRecords]
@@ -158,7 +171,11 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
           val sentenceId = candidate.head.featureVectorSearchInfo.sentenceId
           val sentenceType = candidate.head.featureVectorSearchInfo.sentenceType
           val lang = candidate.head.featureVectorSearchInfo.lang
-          getAnalyzedSentenceObjectBySentenceId(propositionId, sentenceId, sentenceType, lang)
+          val aso = getAnalyzedSentenceObjectBySentenceId(propositionId, sentenceId, sentenceType, lang)
+          aso.nodeMap.size match {
+            case 0 => x
+            case _ => aso
+          }
         }
       }
     })
