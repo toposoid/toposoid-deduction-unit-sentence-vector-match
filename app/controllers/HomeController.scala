@@ -17,13 +17,13 @@
 package controllers
 
 import com.ideal.linked.common.DeploymentConverter.conf
-import com.ideal.linked.toposoid.common.{CLAIM, PREMISE, ToposoidUtils}
-import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{getAnalyzedSentenceObjectBySentenceId, getCypherQueryResult, neo4JData2AnalyzedSentenceObjectByPropositionId}
+import com.ideal.linked.toposoid.common.{CLAIM, LOCAL, PREDICATE_ARGUMENT, PREMISE, ToposoidUtils}
+import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{getAnalyzedSentenceObjectBySentenceId, getCypherQueryResult}
 import com.ideal.linked.toposoid.deduction.common.{DeductionUnitController, SentenceInfo}
 import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorIdentifier, FeatureVectorSearchResult, SingleFeatureVectorForSearch}
-import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode, KnowledgeFeatureNode, LocalContextForFeature}
+import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode, KnowledgeBaseSemiGlobalNode}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.Knowledge
-import com.ideal.linked.toposoid.protocol.model.base.{AnalyzedSentenceObject, AnalyzedSentenceObjects, DeductionResult, MatchedFeatureInfo, MatchedPropositionInfo}
+import com.ideal.linked.toposoid.protocol.model.base.{AnalyzedSentenceObject, AnalyzedSentenceObjects, MatchedFeatureInfo, MatchedPropositionInfo}
 import com.ideal.linked.toposoid.protocol.model.neo4j.{Neo4jRecordMap, Neo4jRecords}
 import com.ideal.linked.toposoid.vectorizer.FeatureVectorizer
 import com.typesafe.scalalogging.LazyLogging
@@ -78,9 +78,9 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     sentenceMap.map(_.map(x => {
       val originalSentenceType = x._1
       val originalSentenceId = x._2.sentenceId
-      val vector = FeatureVectorizer.getVector(Knowledge(x._2.sentence, x._2.lang, "{}"))
-      val json: String = Json.toJson(SingleFeatureVectorForSearch(vector = vector.vector, num = conf.getString("TOPOSOID_VECTORDB_SEARCH_NUM_MAX").toInt)).toString()
-      val featureVectorSearchResultJson: String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_VECTORDB_ACCESSOR_PORT"), "search")
+      val vector = FeatureVectorizer.getSentenceVector(Knowledge(x._2.sentence, x._2.lang, "{}"))
+      val json: String = Json.toJson(SingleFeatureVectorForSearch(vector = vector.vector, num = conf.getString("TOPOSOID_SENTENCE_VECTORDB_SEARCH_NUM_MAX").toInt)).toString()
+      val featureVectorSearchResultJson: String = ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_PORT"), "search")
       val result = Json.parse(featureVectorSearchResultJson).as[FeatureVectorSearchResult]
 
       //Claimとして存在している場合に推論が可能になる
@@ -148,11 +148,11 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
 
     val sentenceMap:List[Map[Int, SentenceInfo]] = analyzedSentenceObjects.analyzedSentenceObjects.foldLeft(List.empty[Map[Int, SentenceInfo]]){
       (acc, x) => {
-        acc :+ Map(x.knowledgeFeatureNode.sentenceType ->
-          SentenceInfo(sentence = x.knowledgeFeatureNode.sentence,
-            lang = x.knowledgeFeatureNode.localContextForFeature.lang,
-            sentenceId = x.knowledgeFeatureNode.sentenceId,
-            propositionId = x.knowledgeFeatureNode.propositionId
+        acc :+ Map(x.knowledgeBaseSemiGlobalNode.sentenceType ->
+          SentenceInfo(sentence = x.knowledgeBaseSemiGlobalNode.sentence,
+            lang = x.knowledgeBaseSemiGlobalNode.localContextForFeature.lang,
+            sentenceId = x.knowledgeBaseSemiGlobalNode.sentenceId,
+            propositionId = x.knowledgeBaseSemiGlobalNode.propositionId
           ))
       }
     }
@@ -162,7 +162,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
 
     //単純にemptyなところは、前のInputのAnalysisSentenceObjectにして、emptyじゃないところはAnalysisSentenceObjectを置換する。
     analyzedSentenceObjects.analyzedSentenceObjects.map(x => {
-      val candidate = sentenceId2FeatureVectorSearchResult.filter(y => y.originalSentenceId == x.knowledgeFeatureNode.sentenceId)
+      val candidate = sentenceId2FeatureVectorSearchResult.filter(y => y.originalSentenceId == x.knowledgeBaseSemiGlobalNode.sentenceId)
       candidate.head.featureVectorSearchInfo.propositionId match {
         case "" => x
         case _ =>  {
@@ -196,7 +196,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     val sourceNodeSurface = nodeMap.get(sourceKey).getOrElse().asInstanceOf[KnowledgeBaseNode].predicateArgumentStructure.surface
     val destinationNodeSurface = nodeMap.get(targetKey).getOrElse().asInstanceOf[KnowledgeBaseNode].predicateArgumentStructure.surface
 
-    val nodeType: String = ToposoidUtils.getNodeType(CLAIM.index)
+    val nodeType: String = ToposoidUtils.getNodeType(CLAIM.index, LOCAL.index, PREDICATE_ARGUMENT.index)
     val query = "MATCH (n1:%s)-[e]-(n2:%s) WHERE n1.surface='%s' AND e.caseName='%s' AND n2.surface='%s' RETURN n1, e, n2".format(nodeType, nodeType, sourceNodeSurface, edge.caseStr, destinationNodeSurface)
     logger.info(query)
     val jsonStr: String = getCypherQueryResult(query, "")

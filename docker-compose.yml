@@ -14,11 +14,13 @@ services:
       - GRAPHDB_HOST=172.30.0.2
       - PRIVATE_IP_ADDRESS=localhost
       - SCALA_DATA_ACCESSOR_NEO4J_WEB_HOST=172.30.0.3
-      - COMMON_NLP_JP_WEB_HOST=172.30.0.5
-      - COMMON_NLP_EN_WEB_HOST=172.30.0.7
-      - TOPOSOID_VECTORDB_ACCESSOR_HOST=172.30.0.9
-      - TOPOSOID_VECTORDB_ACCESSOR_PORT=9011
-      - TOPOSOID_VECTORDB_SEARCH_NUM_MAX=5
+      - TOPOSOID_COMMON_NLP_JP_WEB_HOST=172.30.0.5
+      - TOPOSOID_COMMON_NLP_JP_WEB_PORT=9006
+      - TOPOSOID_COMMON_NLP_EN_WEB_HOST=172.30.0.7
+      - TOPOSOID_COMMON_NLP_EN_WEB_PORT=9008
+      - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST=172.30.0.9
+      - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_PORT=9011
+      - TOPOSOID_SENTENCE_VECTORDB_SEARCH_NUM_MAX=5
       - PLAY_HTTP_PORT=9103
     networks:
       app_net:
@@ -27,7 +29,6 @@ services:
       - 9103:9103
     depends_on:
       - neo4j
-      - data-accessor-vald-web
       - toposoid-common-nlp-japanese-web
       - toposoid-common-nlp-english-web
   toposoid-common-nlp-japanese-web:
@@ -119,7 +120,6 @@ services:
   #    - 8081:8081
   data-accessor-weaviate-web:
     image: toposoid/data-accessor-weaviate-web:0.5-SNAPSHOT
-    tty: true
     environment:
       - TOPOSOID_WEAVIATE_HOST=172.30.0.10
       - TOPOSOID_WEAVIATE_PORT=8080
