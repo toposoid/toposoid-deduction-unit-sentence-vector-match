@@ -206,7 +206,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     neo4jRecords.records.foldLeft(accParent) {
       (acc, x) => {
         val neo4jRecordMap = acc._1 :+ x
-        val matchedPropositionInfoList = acc._2 :+ MatchedPropositionInfo(x.head.value.logicNode.propositionId, List(MatchedFeatureInfo(x.head.value.logicNode.sentenceId, 1)))
+        val matchedPropositionInfoList = acc._2 :+ MatchedPropositionInfo(x.head.value.localNode.get.propositionId, List(MatchedFeatureInfo(x.head.value.localNode.get.sentenceId, 1)))
         val sourceNode = CoveredPropositionNode(terminalId = sourceKey, terminalSurface = sourceNodeSurface, terminalUrl = "")
         val destinationNode = CoveredPropositionNode(terminalId = targetKey, terminalSurface = destinationNodeSurface, terminalUrl = "")
         val coveredPropositionEdgeList = acc._3 :+ CoveredPropositionEdge(sourceNode = sourceNode, destinationNode = destinationNode)
