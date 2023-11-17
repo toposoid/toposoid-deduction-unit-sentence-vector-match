@@ -157,7 +157,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
       }
     }
 
-    //Valdに問い合わせ
+    //ベクトルデータベースに問い合わせ
     val sentenceId2FeatureVectorSearchResult:List[SentenceId2FeatureVectorSearchResult] = sentence2PropositionId(sentenceMap)
 
     //単純にemptyなところは、前のInputのAnalysisSentenceObjectにして、emptyじゃないところはAnalysisSentenceObjectを置換する。
@@ -189,7 +189,9 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
    * @param accParent
    * @return
    */
-  def analyzeGraphKnowledge(edge: KnowledgeBaseEdge, nodeMap: Map[String, KnowledgeBaseNode], sentenceType: Int, accParent: (List[List[Neo4jRecordMap]], List[MatchedPropositionInfo], List[CoveredPropositionEdge])): (List[List[Neo4jRecordMap]], List[MatchedPropositionInfo], List[CoveredPropositionEdge]) = {
+  def analyzeGraphKnowledge(edge: KnowledgeBaseEdge,aso:AnalyzedSentenceObject, accParent: (List[List[Neo4jRecordMap]], List[MatchedPropositionInfo], List[CoveredPropositionEdge])): (List[List[Neo4jRecordMap]], List[MatchedPropositionInfo], List[CoveredPropositionEdge]) = {
+
+    val nodeMap: Map[String, KnowledgeBaseNode] = aso.nodeMap
 
     val sourceKey = edge.sourceId
     val targetKey = edge.destinationId
