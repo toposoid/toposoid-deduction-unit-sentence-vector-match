@@ -23,7 +23,7 @@ import com.ideal.linked.toposoid.deduction.common.{DeductionUnitController, Sent
 import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorIdentifier, FeatureVectorSearchResult, SingleFeatureVectorForSearch}
 import com.ideal.linked.toposoid.knowledgebase.model.{KnowledgeBaseEdge, KnowledgeBaseNode}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.Knowledge
-import com.ideal.linked.toposoid.protocol.model.base.{AnalyzedSentenceObject, AnalyzedSentenceObjects, CoveredPropositionEdge, CoveredPropositionNode, MatchedFeatureInfo, MatchedPropositionInfo}
+import com.ideal.linked.toposoid.protocol.model.base.{AnalyzedSentenceObject, AnalyzedSentenceObjects, CoveredPropositionEdge, CoveredPropositionNode, KnowledgeBaseSideInfo, MatchedFeatureInfo}
 import com.ideal.linked.toposoid.protocol.model.neo4j.{Neo4jRecordMap, Neo4jRecords}
 import com.ideal.linked.toposoid.vectorizer.FeatureVectorizer
 import com.typesafe.scalalogging.LazyLogging
@@ -181,14 +181,44 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
     })
   }
 
+
   /**
-   * This function is a sub-function of analyze
-   *
-   * @param nodeMap
-   * @param sentenceType
+   * his function is a sub-function of analyze
+   * @param edge
+   * @param aso
    * @param accParent
    * @return
    */
+  def analyzeGraphKnowledge(edge: KnowledgeBaseEdge, aso: AnalyzedSentenceObject, accParent: List[(KnowledgeBaseSideInfo, CoveredPropositionEdge)]): List[(KnowledgeBaseSideInfo, CoveredPropositionEdge)] = {
+
+    val nodeMap: Map[String, KnowledgeBaseNode] = aso.nodeMap
+    val sourceKey = edge.sourceId
+    val targetKey = edge.destinationId
+    val sourceNodeSurface = nodeMap.get(sourceKey).getOrElse().asInstanceOf[KnowledgeBaseNode].predicateArgumentStructure.surface
+    val destinationNodeSurface = nodeMap.get(targetKey).getOrElse().asInstanceOf[KnowledgeBaseNode].predicateArgumentStructure.surface
+
+    val nodeType: String = ToposoidUtils.getNodeType(CLAIM.index, LOCAL.index, PREDICATE_ARGUMENT.index)
+    val query = "MATCH (n1:%s)-[e]-(n2:%s) WHERE n1.surface='%s' AND e.caseName='%s' AND n2.surface='%s' RETURN n1, e, n2".format(nodeType, nodeType, sourceNodeSurface, edge.caseStr, destinationNodeSurface)
+    logger.info(query)
+    val jsonStr: String = getCypherQueryResult(query, "")
+    //If there is even one that does not match, it is useless to search further
+    if (jsonStr.equals("""{"records":[]}""")) return accParent
+    val neo4jRecords: Neo4jRecords = Json.parse(jsonStr).as[Neo4jRecords]
+
+
+    accParent
+    neo4jRecords.records.foldLeft(accParent) {
+      (acc, x) => {
+        val sourceNode = CoveredPropositionNode(terminalId = sourceKey, terminalSurface = sourceNodeSurface, terminalUrl = "")
+        val destinationNode = CoveredPropositionNode(terminalId = targetKey, terminalSurface = destinationNodeSurface, terminalUrl = "")
+        val knowledgeBaseSideInfo = KnowledgeBaseSideInfo(propositionId = x.head.value.localNode.get.propositionId, sentenceId = x.head.value.localNode.get.sentenceId, featureInfoList = List.empty[MatchedFeatureInfo])
+        val coveredPropositionEdge = CoveredPropositionEdge(sourceNode = sourceNode, destinationNode = destinationNode)
+        acc :+ (knowledgeBaseSideInfo, coveredPropositionEdge)
+      }
+    }
+
+  }
+  /*
   def analyzeGraphKnowledge(edge: KnowledgeBaseEdge,aso:AnalyzedSentenceObject, accParent: (List[List[Neo4jRecordMap]], List[MatchedPropositionInfo], List[CoveredPropositionEdge])): (List[List[Neo4jRecordMap]], List[MatchedPropositionInfo], List[CoveredPropositionEdge]) = {
 
     val nodeMap: Map[String, KnowledgeBaseNode] = aso.nodeMap
@@ -216,7 +246,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
       }
     }
   }
-
+*/
 
 
 }
