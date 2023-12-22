@@ -2,8 +2,8 @@ FROM toposoid/toposoid-scala-lib:0.5-SNAPSHOT
 
 WORKDIR /app
 ARG TARGET_BRANCH
-ENV DEPLOYMENT=local
-ENV _JAVA_OPTIONS="-Xms256m -Xmx1g"
+ENV DEPLOYMENT=locald
+ENV _JAVA_OPTIONS="-Xms256m -Xmx2g"
 
 RUN git clone https://github.com/toposoid/toposoid-deduction-common.git \
 && cd toposoid-deduction-common \
