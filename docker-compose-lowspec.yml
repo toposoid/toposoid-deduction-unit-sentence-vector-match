@@ -130,7 +130,7 @@ services:
     environment:
       - TOPOSOID_WEAVIATE_HOST=172.30.0.11
       - TOPOSOID_WEAVIATE_PORT=8080
-      - TOPOSOID_WEAVIATE_SIMILARITY_THRESHOLD=0.82
+      - TOPOSOID_WEAVIATE_SIMILARITY_THRESHOLD=0.87
     networks:
       app_net:
         ipv4_address: 172.30.0.10
