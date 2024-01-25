@@ -66,7 +66,7 @@ class HomeControllerSpecEnglish3 extends PlaySpec with BeforeAndAfter with Befor
   val paraphraseA = "I heard that the victim was lying on his stomach."
   val paraphraseB = "There was a dying message written in blood on the floor."
   val paraphraseC = "This is suspected to be a murder disguised as an accident."
-  val paraphraseD = "We confirmed that the culprit was one of us."
+  val paraphraseD = "The culprit was one of us."
 
   def registSingleClaim(knowledgeForParser: KnowledgeForParser): Unit = {
     val knowledgeSentenceSetForParser = KnowledgeSentenceSetForParser(
