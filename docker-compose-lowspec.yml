@@ -9,29 +9,28 @@ networks:
 
 services:
   toposoid-deduction-unit-sentence-vector-match-web:
-    image: toposoid-deduction-unit-sentence-vector-match-web:0.5-SNAPSHOT
-    tty: true
+    image: toposoid/toposoid-deduction-unit-sentence-vector-match-web:0.5-SNAPSHOT-lowspec
     environment:
       - GRAPHDB_HOST=172.30.0.2
-      - PRIVATE_IP_ADDRESS=172.30.0.9
+      - PRIVATE_IP_ADDRESS=localhost
       - SCALA_DATA_ACCESSOR_NEO4J_WEB_HOST=172.30.0.3
-      - TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST=172.30.0.4
-      - TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT=9001
-      - TOPOSOID_SENTENCE_PARSER_EN_WEB_HOST=172.30.0.6
-      - TOPOSOID_SENTENCE_PARSER_EN_WEB_PORT=9007
       - TOPOSOID_COMMON_NLP_JP_WEB_HOST=172.30.0.5
       - TOPOSOID_COMMON_NLP_JP_WEB_PORT=9006
       - TOPOSOID_COMMON_NLP_EN_WEB_HOST=172.30.0.7
       - TOPOSOID_COMMON_NLP_EN_WEB_PORT=9008
-      - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST=172.30.0.10
+      - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST=172.30.0.9
       - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_PORT=9011
       - TOPOSOID_SENTENCE_VECTORDB_SEARCH_NUM_MAX=5
       - PLAY_HTTP_PORT=9103
     networks:
       app_net:
-        ipv4_address: 172.30.0.9
+        ipv4_address: 172.30.0.4
     ports:
       - 9103:9103
+    depends_on:
+      - neo4j
+      - toposoid-common-nlp-japanese-web
+      - toposoid-common-nlp-english-web
   scala-data-accessor-neo4j-web:
     image: toposoid/scala-data-accessor-neo4j-web:0.5-SNAPSHOT-lowspec
     environment:
@@ -164,3 +163,5 @@ services:
       HUGGINGFACE_APIKEY: ''
       ENABLE_MODULES: 'text2vec-cohere,text2vec-huggingface,text2vec-palm,text2vec-openai,generative-openai,generative-cohere,generative-palm,ref2vec-centroid,reranker-cohere,qna-openai'
       CLUSTER_HOSTNAME: 'node1'
+
+
