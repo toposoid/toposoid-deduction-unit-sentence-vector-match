@@ -1,30 +1,19 @@
 version: '3'
-networks:
-  app_net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.30.0.0/24
-
 services:
   toposoid-deduction-unit-sentence-vector-match-web:
     image: toposoid/toposoid-deduction-unit-sentence-vector-match-web:0.5-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=localhost
-      - TOPOSOID_GRAPHDB_HOST=172.30.0.2
-      - TOPOSOID_GRAPHDB_WEB_HOST=172.30.0.3
-      - TOPOSOID_COMMON_NLP_JP_WEB_HOST=172.30.0.5
+      - TOPOSOID_GRAPHDB_HOST=neo4j
+      - TOPOSOID_GRAPHDB_WEB_HOST=scala-data-accessor-neo4j-web
+      - TOPOSOID_COMMON_NLP_JP_WEB_HOST=toposoid-common-nlp-japanese-web
       - TOPOSOID_COMMON_NLP_JP_WEB_PORT=9006
-      - TOPOSOID_COMMON_NLP_EN_WEB_HOST=172.30.0.7
+      - TOPOSOID_COMMON_NLP_EN_WEB_HOST=toposoid-common-nlp-english-web
       - TOPOSOID_COMMON_NLP_EN_WEB_PORT=9008
-      - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST=172.30.0.9
+      - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST=data-accessor-weaviate-web
       - TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_PORT=9011
       - TOPOSOID_SENTENCE_VECTORDB_SEARCH_NUM_MAX=5
       - PLAY_HTTP_PORT=9103
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.4
     ports:
       - 9103:9103
     depends_on:
@@ -34,7 +23,7 @@ services:
   toposoid-common-nlp-japanese-web:
     image: toposoid/toposoid-common-nlp-japanese-web:0.5-SNAPSHOT
     environment:
-      - PRIVATE_IP_ADDRESS=172.30.0.5
+      - PRIVATE_IP_ADDRESS=toposoid-common-nlp-japanese-web
       - TOPOSOID_SYNONYM_NOUN_SIMILARITY_THRESHHOLD_JP=0.52
       - TOPOSOID_SYNONYM_VERB_SIMILARITY_THRESHHOLD_JP=0.52
       - TOPOSOID_WORD2VEC_SIMILARITY_THRESHHOLD_JP=0.68
@@ -42,15 +31,12 @@ services:
       - TOPOSOID_SENTENCEBERT_MODEL_JP=sentence-transformers/paraphrase-multilingual-mpnet-base-v2
       - SENTENCE_TRANSFORMERS_HOME=./models
       - PLAY_HTTP_PORT=9006
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.5
     ports:
       - 9006:9006
   toposoid-common-nlp-english-web:
     image: toposoid/toposoid-common-nlp-english-web:0.5-SNAPSHOT
     environment:
-      - PRIVATE_IP_ADDRESS=172.30.0.7
+      - PRIVATE_IP_ADDRESS=toposoid-common-nlp-english-web
       - TOPOSOID_SYNONYM_NOUN_SIMILARITY_THRESHHOLD_EN=0.52
       - TOPOSOID_SYNONYM_VERB_SIMILARITY_THRESHHOLD_EN=0.52
       - TOPOSOID_WORD2VEC_SIMILARITY_THRESHHOLD_EN=0.78
@@ -58,20 +44,14 @@ services:
       - TOPOSOID_SENTENCEBERT_MODEL_EN=sentence-transformers/paraphrase-multilingual-mpnet-base-v2
       - SENTENCE_TRANSFORMERS_HOME=./models
       - PLAY_HTTP_PORT=9008
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.7
     ports:
       - 9008:9008
   scala-data-accessor-neo4j-web:
     image: toposoid/scala-data-accessor-neo4j-web:0.5-SNAPSHOT
     environment:
-      - PRIVATE_IP_ADDRESS=172.30.0.3
-      - TOPOSOID_GRAPHDB_HOST=172.30.0.2
+      - PRIVATE_IP_ADDRESS=scala-data-accessor-neo4j-web
+      - TOPOSOID_GRAPHDB_HOST=neo4j
       - PLAY_HTTP_PORT=9005
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.3
     ports:
       - 9005:9005
     depends_on:
@@ -86,25 +66,19 @@ services:
       - NEO4J_apoc_import_file_enabled=true
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*,algo.*
       - NEO4J_dbms_memory_heap_initial__size=512m
-      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_heap_max__size=4G
       - NEO4J_dbms_transaction_timeout=10s
       - NEO4J_apoc_uuid_enabled=true
       - NEO4J_dbms_default__listen__address=0.0.0.0
       - NEO4J_dbms_allow__upgrade=true
       - NEO4J_dbms_default__database=neo4j
       - NEO4J_AUTH=neo4j/p@ssw0rd
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.2
   data-accessor-weaviate-web:
     image: toposoid/data-accessor-weaviate-web:0.5-SNAPSHOT
     environment:
-      - TOPOSOID_WEAVIATE_HOST=172.30.0.10
+      - TOPOSOID_WEAVIATE_HOST=weaviate
       - TOPOSOID_WEAVIATE_PORT=8080
       - TOPOSOID_WEAVIATE_SIMILARITY_THRESHOLD=0.87
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.9
     ports:
       - 9011:9011
     depends_on:
@@ -120,9 +94,6 @@ services:
     image: semitechnologies/weaviate:1.21.2
     ports:
       - 8080:8080
-    networks:
-      app_net:
-        ipv4_address: 172.30.0.10
     #volumes:
     #  - /var/weaviate:/var/lib/weaviate
     restart: on-failure:0
