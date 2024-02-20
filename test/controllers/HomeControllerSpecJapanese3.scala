@@ -19,8 +19,8 @@ package controllers
 import akka.util.Timeout
 import com.ideal.linked.common.DeploymentConverter.conf
 import com.ideal.linked.data.accessor.neo4j.Neo4JAccessor
-import com.ideal.linked.toposoid.common.ToposoidUtils
-import com.ideal.linked.toposoid.knowledgebase.featurevector.model.FeatureVectorId
+import com.ideal.linked.toposoid.common.{CLAIM, PREMISE, ToposoidUtils}
+import com.ideal.linked.toposoid.knowledgebase.featurevector.model.{FeatureVectorId, FeatureVectorIdentifier}
 import com.ideal.linked.toposoid.knowledgebase.regist.model.{Knowledge, KnowledgeSentenceSet, PropositionRelation}
 import com.ideal.linked.toposoid.protocol.model.base.AnalyzedSentenceObjects
 import com.ideal.linked.toposoid.protocol.model.parser.{InputSentence, InputSentenceForParser, KnowledgeForParser, KnowledgeSentenceSetForParser}
@@ -46,6 +46,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
   }
 
   override def beforeAll(): Unit = {
+    ToposoidUtils.callComponent("{}", conf.getString("TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_PORT"), "createSchema")
     Neo4JAccessor.delete()
   }
 
@@ -78,9 +79,9 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
     Thread.sleep(5000)
   }
 
-  private def deleteFeatureVector(propositionId: String, lang: String, sentenceId: String): Unit = {
-    val json: String = Json.toJson(FeatureVectorId(id = propositionId + "#" + lang + "#" + sentenceId)).toString()
-    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_VALD_ACCESSOR_HOST"), "9010", "delete")
+  private def deleteFeatureVector(featureVectorIdentifier: FeatureVectorIdentifier): Unit = {
+    val json: String = Json.toJson(featureVectorIdentifier).toString()
+    ToposoidUtils.callComponent(json, conf.getString("TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_HOST"), conf.getString("TOPOSOID_SENTENCE_VECTORDB_ACCESSOR_PORT"), "delete")
   }
 
   "The specification21" should {
@@ -104,7 +105,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
 
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -113,10 +114,11 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 2)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId2)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 2)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
 
@@ -148,7 +150,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -157,12 +159,12 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId2)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId3)
-
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = PREMISE.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
 
@@ -197,7 +199,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -206,13 +208,57 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 2)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId2)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId3)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId4)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 2)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 2)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId4, sentenceType = CLAIM.index, lang = "ja_JP"))
 
+    }
+  }
+
+  "The specification23A" should {
+    "returns an appropriate response" in {
+      val propositionId1 = UUID.random.toString
+      val propositionId2 = UUID.random.toString
+      val propositionId3 = UUID.random.toString
+      val sentenceId1 = UUID.random.toString
+      val sentenceId2 = UUID.random.toString
+      val sentenceId3 = UUID.random.toString
+      val sentenceId4 = UUID.random.toString
+      val knowledge1 = Knowledge(sentenceA, "ja_JP", "{}", false)
+      val knowledge2 = Knowledge(sentenceB, "ja_JP", "{}", false)
+      val knowledge3 = Knowledge(sentenceC, "ja_JP", "{}", false)
+
+      val paraphrase1 = Knowledge(paraphraseA, "ja_JP", "{}", false)
+      val paraphrase2 = Knowledge(paraphraseB, "ja_JP", "{}", false)
+      val paraphrase3 = Knowledge(paraphraseC, "ja_JP", "{}", false)
+
+      registSingleClaim(KnowledgeForParser(propositionId1, sentenceId1, knowledge1))
+      registSingleClaim(KnowledgeForParser(propositionId2, sentenceId2, knowledge2))
+      registSingleClaim(KnowledgeForParser(propositionId3, sentenceId3, knowledge3))
+
+      val propositionIdForInference = UUID.random.toString
+      val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
+      val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
+      val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
+      val fr = FakeRequest(POST, "/execute")
+        .withHeaders("Content-type" -> "application/json")
+        .withJsonBody(Json.parse(json))
+      val result = call(controller.execute(), fr)
+      status(result) mustBe OK
+      contentType(result) mustBe Some("application/json")
+      val jsonResult: String = contentAsJson(result).toString()
+      val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 2)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId3, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
 
@@ -243,7 +289,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -252,11 +298,11 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId2)
-
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = PREMISE.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId2, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
 
@@ -290,7 +336,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -299,12 +345,14 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
-      //assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId2)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId3)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 1)
+      //assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 1)
+
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "ja_JP"))
 
     }
   }
@@ -339,7 +387,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -348,12 +396,15 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
-      //assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId2)
-      deleteFeatureVector(propositionId2, "ja_JP", sentenceId3)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 1)
+      //assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 1)
+
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId2, sentenceType = PREMISE.index, lang = "ja_JP"))
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId2, featureId = sentenceId3, sentenceType = CLAIM.index, lang = "ja_JP"))
+
     }
   }
 
@@ -378,7 +429,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase4))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
 
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -387,9 +438,11 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
+
     }
   }
 
@@ -414,7 +467,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase4))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
 
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -423,9 +476,10 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 1)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 0)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
 
@@ -449,7 +503,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val premiseKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase1), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase2))
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase4))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -458,9 +512,10 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
 
@@ -485,7 +540,7 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       val claimKnowledge = List(KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase3), KnowledgeForParser(propositionIdForInference, UUID.random.toString, paraphrase4))
       val inputSentence = Json.toJson(InputSentenceForParser(premiseKnowledge, claimKnowledge)).toString()
 
-      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("SENTENCE_PARSER_JP_WEB_HOST"), "9001", "analyze")
+      val json = ToposoidUtils.callComponent(inputSentence, conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_HOST"), conf.getString("TOPOSOID_SENTENCE_PARSER_JP_WEB_PORT"), "analyze")
       val fr = FakeRequest(POST, "/execute")
         .withHeaders("Content-type" -> "application/json")
         .withJsonBody(Json.parse(json))
@@ -494,9 +549,11 @@ class HomeControllerSpecJapanese3 extends PlaySpec with BeforeAndAfter with Befo
       contentType(result) mustBe Some("application/json")
       val jsonResult: String = contentAsJson(result).toString()
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(jsonResult).as[AnalyzedSentenceObjects]
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("0").get.status).size == 0)
-      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(_.deductionResultMap.get("1").get.status).size == 1)
-      deleteFeatureVector(propositionId1, "ja_JP", sentenceId1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(PREMISE.index) && x.deductionResult.status).size == 0)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.status).size == 1)
+      assert(analyzedSentenceObjects.analyzedSentenceObjects.filter(x => x.knowledgeBaseSemiGlobalNode.sentenceType.equals(CLAIM.index) && x.deductionResult.havePremiseInGivenProposition).size == 0)
+      deleteFeatureVector(FeatureVectorIdentifier(propositionId = propositionId1, featureId = sentenceId1, sentenceType = CLAIM.index, lang = "ja_JP"))
     }
   }
+
 }

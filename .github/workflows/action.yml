@@ -2,14 +2,13 @@ name: Test And Build
 on:
   push:
     branches:
-      - main
       - feature
   workflow_dispatch:
 env:
   PJ_ACTOR: toposoid
   PJ_REPO: toposoid-deduction-unit-sentence-vector-match-web
   PJ_BRANCH: feature
-  PJ_VERSION: 0.4
+  PJ_VERSION: 0.5
 jobs:
   unit-test_toposoid-deduction-unit-sentence-vector-match-web:
     runs-on: self-hosted
@@ -22,63 +21,57 @@ jobs:
         run: |
             cd ${GITHUB_WORKSPACE} && cd ../
             cd ./${{ env.PJ_REPO }}
-            rm -f vald-config/backup/*
-            echo "$(id -u $USER):$(id -g $USER)"
             docker rm --force $(docker ps -a -q) > /dev/null 2>&1 && :
-            docker rmi --force $(docker images -q) > /dev/null 2>&1 && :
+            docker rmi --force ${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}> /dev/null 2>&1 && :
+            docker rmi --force toposoid/${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}> /dev/null 2>&1 && :
+            docker rmi --force toposoid/${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}-lowspec > /dev/null 2>&1 && :                    
             docker images
             docker system prune -f
             docker volume prune -f
-            docker build --build-arg TARGET_BRANCH=${{ env.PJ_BRANCH }} --tag ${{ env.PJ_REPO }}:${{ env.PJ_VERSION }} -f Dockerfile-workflow .
+            docker build --build-arg TARGET_BRANCH=${{ env.PJ_BRANCH }} --build-arg JAVA_OPT_XMX=2g --tag ${{ env.PJ_REPO }}:${{ env.PJ_VERSION }} -f Dockerfile-workflow .
             docker-compose -f docker-compose-workflow.yml up -d toposoid-deduction-unit-sentence-vector-match-web
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt headerCheck"
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt test:headerCheck"
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt compile"
-            docker-compose -f docker-compose-workflow.yml up -d neo4j
-            docker-compose -f docker-compose-workflow.yml up -d vald
-            docker-compose -f docker-compose-workflow.yml up -d data-accessor-vald-web
-            docker-compose -f docker-compose-workflow.yml up -d scala-data-accessor-neo4j-web
             docker-compose -f docker-compose-workflow.yml up -d toposoid-common-nlp-japanese-web
+            docker-compose -f docker-compose-workflow.yml up -d neo4j
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
+            docker-compose -f docker-compose-workflow.yml up -d data-accessor-weaviate-web
+            docker-compose -f docker-compose-workflow.yml up -d scala-data-accessor-neo4j-web            
             docker-compose -f docker-compose-workflow.yml up -d toposoid-sentence-parser-japanese-web
+            curl --retry 10 --retry-delay 5 --retry-all-errors -X POST http://localhost:7474
+            curl --retry 10 --retry-delay 5 --retry-all-errors -X POST -H "Content-Type: application/json" -d '{"sentence": "これはテストです。"}' http://localhost:9006/getFeatureVector
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese1'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese2'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese3'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*Japanese4'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml rm -fsv toposoid-common-nlp-japanese-web
             docker-compose -f docker-compose-workflow.yml rm -fsv toposoid-sentence-parser-japanese-web
-            docker rmi --force toposoid/toposoid-sentence-parser-japanese-web:${{ env.PJ_VERSION }}-workflow
-            docker rmi --force toposoid/toposoid-common-nlp-japanese-web:${{ env.PJ_VERSION }}-workflow
-            docker images
-            docker system prune -f
-            docker volume prune -f
             docker-compose -f docker-compose-workflow.yml up -d corenlp
             docker-compose -f docker-compose-workflow.yml up -d toposoid-common-nlp-english-web
             docker-compose -f docker-compose-workflow.yml up -d toposoid-sentence-parser-english-web
+            curl -X POST  -d 'Life is beautiful.' http://localhost:9000
+            curl --retry 10 --retry-delay 5 --retry-all-errors -X POST -H "Content-Type: application/json" -d '{"sentence": "This is a test"}' http://localhost:9008/getFeatureVector
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English1'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English2'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English3'"
-            docker-compose -f docker-compose-workflow.yml rm -fsv vald
-            rm -f vald-config/backup/*
-            docker-compose -f docker-compose-workflow.yml up -d vald
+            docker-compose -f docker-compose-workflow.yml rm -fsv weaviate
+            docker-compose -f docker-compose-workflow.yml up -d weaviate
             docker-compose -f docker-compose-workflow.yml exec -T ${{ env.PJ_REPO }} bash -c "cd ${{ env.PJ_REPO }} && sbt 'testOnly **.*English4'"
+            docker rm --force $(docker ps -a -q) > /dev/null 2>&1 && :
+            docker rmi --force ${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}> /dev/null 2>&1 && :
       - name: Docker meta
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v3
@@ -97,12 +90,14 @@ jobs:
           tags: toposoid/${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}
           build-args: |
             TARGET_BRANCH=${{ env.PJ_BRANCH }}
+            JAVA_OPT_XMX=4g
       - name: Build And Push Docker Image For Test
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: Dockerfile-smallspec
+          file: Dockerfile
           push: true
-          tags: toposoid/${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}-workflow
+          tags: toposoid/${{ env.PJ_REPO }}:${{ env.PJ_VERSION }}-lowspec
           build-args: |
             TARGET_BRANCH=${{ env.PJ_BRANCH }}
+            JAVA_OPT_XMX=2g
