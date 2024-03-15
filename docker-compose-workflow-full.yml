@@ -1,7 +1,7 @@
 version: '3'
 services:
   toposoid-deduction-unit-sentence-vector-match-web:
-    image: toposoid-deduction-unit-sentence-vector-match-web:0.5
+    image: toposoid-deduction-unit-sentence-vector-match-web:0.6-SNAPSHOT
     tty: true
     environment:
       - PRIVATE_IP_ADDRESS=toposoid-deduction-unit-sentence-vector-match-web
@@ -22,7 +22,7 @@ services:
     ports:
       - 9103:9103
   scala-data-accessor-neo4j-web:
-    image: toposoid/scala-data-accessor-neo4j-web:0.5
+    image: toposoid/scala-data-accessor-neo4j-web:0.6-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=scala-data-accessor-neo4j-web
       - TOPOSOID_GRAPHDB_HOST=neo4j
@@ -30,14 +30,14 @@ services:
     ports:
       - 9005:9005
   toposoid-sentence-parser-japanese-web:
-    image: toposoid/toposoid-sentence-parser-japanese-web:0.5
+    image: toposoid/toposoid-sentence-parser-japanese-web:0.6-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=toposoid-sentence-parser-japanese-web
       - PLAY_HTTP_PORT=9001
     ports:
       - 9001:9001
   toposoid-common-nlp-japanese-web:
-    image: toposoid/toposoid-common-nlp-japanese-web:0.5
+    image: toposoid/toposoid-common-nlp-japanese-web:0.6-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=toposoid-common-nlp-japanese-web
       - TOPOSOID_SYNONYM_NOUN_SIMILARITY_THRESHHOLD_JP=0.52
@@ -50,7 +50,7 @@ services:
     ports:
       - 9006:9006
   toposoid-sentence-parser-english-web:
-    image: toposoid/toposoid-sentence-parser-english-web:0.5
+    image: toposoid/toposoid-sentence-parser-english-web:0.6-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=toposoid-sentence-parser-english-web
       - PLAY_HTTP_PORT=9007
@@ -59,7 +59,7 @@ services:
     ports:
       - 9007:9007
   toposoid-common-nlp-english-web:
-    image: toposoid/toposoid-common-nlp-english-web:0.5
+    image: toposoid/toposoid-common-nlp-english-web:0.6-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=toposoid-common-nlp-english-web
       - TOPOSOID_SYNONYM_NOUN_SIMILARITY_THRESHHOLD_EN=0.52
@@ -94,7 +94,7 @@ services:
       - NEO4J_AUTH=neo4j/p@ssw0rd
 
   data-accessor-weaviate-web:
-    image: toposoid/data-accessor-weaviate-web:0.5
+    image: toposoid/data-accessor-weaviate-web:0.6-SNAPSHOT
     environment:
       - TOPOSOID_WEAVIATE_HOST=weaviate
       - TOPOSOID_WEAVIATE_PORT=8080
