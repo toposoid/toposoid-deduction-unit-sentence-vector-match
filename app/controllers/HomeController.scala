@@ -17,7 +17,7 @@
 package controllers
 
 import com.ideal.linked.common.DeploymentConverter.conf
-import com.ideal.linked.toposoid.common.{CLAIM, LOCAL, PREDICATE_ARGUMENT, ToposoidUtils}
+import com.ideal.linked.toposoid.common.{CLAIM, LOCAL, PREDICATE_ARGUMENT, TRANSVERSAL_STATE, ToposoidUtils, TransversalState}
 import com.ideal.linked.toposoid.deduction.common.FacadeForAccessNeo4J.{getAnalyzedSentenceObjectBySentenceId, getCypherQueryResult}
 import com.ideal.linked.toposoid.deduction.common.FacadeForAccessVectorDB.getMatchedSentenceFeature
 import com.ideal.linked.toposoid.deduction.common.{DeductionUnitController, DeductionUnitControllerForSemiGlobal, SentenceInfo}
@@ -46,27 +46,30 @@ import scala.util.{Failure, Success, Try}
 class HomeController @Inject()(val controllerComponents: ControllerComponents) extends BaseController with DeductionUnitControllerForSemiGlobal with LazyLogging {
 
   def execute()  = Action(parse.json) { request =>
+    val transversalState = Json.parse(request.headers.get(TRANSVERSAL_STATE .str).get).as[TransversalState]
     try {
       val json = request.body
       val analyzedSentenceObjects: AnalyzedSentenceObjects = Json.parse(json.toString).as[AnalyzedSentenceObjects]
       val asos: List[AnalyzedSentenceObject] = analyzedSentenceObjects.analyzedSentenceObjects
       val result: List[AnalyzedSentenceObject] = asos.foldLeft(List.empty[AnalyzedSentenceObject]) {
-        (acc, x) => acc :+ analyze(x, acc, "sentence-feature-match", List.empty[Int])
+        (acc, x) => acc :+ analyze(x, acc, "sentence-feature-match", List.empty[Int], transversalState)
       }
+      logger.info(ToposoidUtils.formatMessageForLogger("deduction completed.", transversalState.username))
       Ok(Json.toJson(AnalyzedSentenceObjects(result))).as(JSON)
     }catch {
       case e: Exception => {
-        logger.error(e.toString, e)
+        logger.error(ToposoidUtils.formatMessageForLogger(e.toString, transversalState.username), e)
         BadRequest(Json.obj("status" -> "Error", "message" -> e.toString()))
       }
     }
   }
 
-  def analyzeGraphKnowledgeForSemiGlobal(aso: AnalyzedSentenceObject): List[KnowledgeBaseSideInfo] = {
+  def analyzeGraphKnowledgeForSemiGlobal(aso: AnalyzedSentenceObject, transversalState:TransversalState): List[KnowledgeBaseSideInfo] = {
     getMatchedSentenceFeature(aso.knowledgeBaseSemiGlobalNode.sentenceId,
       aso.knowledgeBaseSemiGlobalNode.sentenceType,
       aso.knowledgeBaseSemiGlobalNode.sentence,
-      aso.knowledgeBaseSemiGlobalNode.localContextForFeature.lang)
+      aso.knowledgeBaseSemiGlobalNode.localContextForFeature.lang,
+      transversalState)
   }
 
 }
