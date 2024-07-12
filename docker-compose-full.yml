@@ -136,6 +136,7 @@ services:
       - TOPOSOID_WEAVIATE_HOST=sentence-weaviate
       - TOPOSOID_WEAVIATE_PORT=8080
       - TOPOSOID_WEAVIATE_SIMILARITY_THRESHOLD=0.85
+      - TOPOSOID_DATA_ACCESSOR_PORT=9011
     ports:
       - 9020:9011
     depends_on:
