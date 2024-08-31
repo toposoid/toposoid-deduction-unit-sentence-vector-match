@@ -4,8 +4,8 @@ services:
     image: toposoid/toposoid-deduction-unit-sentence-vector-match-web:0.6-SNAPSHOT
     environment:
       - PRIVATE_IP_ADDRESS=localhost
-      - TOPOSOID_GRAPHDB_HOST=neo4j
       - TOPOSOID_GRAPHDB_WEB_HOST=scala-data-accessor-neo4j-web
+      - TOPOSOID_GRAPHDB_WEB_PORT=9005
       - TOPOSOID_COMMON_NLP_JP_WEB_HOST=toposoid-common-nlp-japanese-web
       - TOPOSOID_COMMON_NLP_JP_WEB_PORT=9006
       - TOPOSOID_COMMON_NLP_EN_WEB_HOST=toposoid-common-nlp-english-web
@@ -149,7 +149,7 @@ services:
       - '8080'
       - --scheme
       - http
-    image: semitechnologies/weaviate:1.21.2
+    image: cr.weaviate.io/semitechnologies/weaviate:1.26.1
     ports:
       - 8080:8080
     #volumes:
