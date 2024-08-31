@@ -8,6 +8,7 @@ ENV _JAVA_OPTIONS="-Xms512m -Xmx"${JAVA_OPT_XMX}
 
 RUN git clone https://github.com/toposoid/toposoid-deduction-common.git \
 && cd toposoid-deduction-common \
+&& git pull \
 && git fetch origin ${TARGET_BRANCH} \
 && git checkout ${TARGET_BRANCH} \
 && sbt publishLocal \
@@ -15,6 +16,7 @@ RUN git clone https://github.com/toposoid/toposoid-deduction-common.git \
 && cd .. \
 && git clone https://github.com/toposoid/toposoid-deduction-unit-sentence-vector-match-web.git \
 && cd toposoid-deduction-unit-sentence-vector-match-web \
+&& git pull \
 && git fetch origin ${TARGET_BRANCH} \
 && git checkout ${TARGET_BRANCH} \
 && sbt playUpdateSecret 1> /dev/null \
